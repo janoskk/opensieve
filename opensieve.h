@@ -1,10 +1,3 @@
-/*
- * opensieve.h
- *
- *  Created on: Feb 15, 2014
- *      Author: wizo
- */
-
 #ifndef OPENSIEVE_H_
 #define OPENSIEVE_H_
 

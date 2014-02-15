@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <math.h>
 #include <vector>
+
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 #define GREATEST_STDOUT stderr
 #include "greatest.h"
@@ -34,7 +36,7 @@ void show_pattern(int prime)
         printf("%d", char_table[i]);
         if (i % 64 == 63)
         {
-            printf("\t %llx\n", hex);
+            printf("\t %" PRIu64 "x\n", hex);
             hex = 0;
         }
 
@@ -74,11 +76,11 @@ void old_sieve(uint64_t limit)
     {
         if (small_primes[i])
         {
-            // printf("B %llu\n", i*2+1);
+            // printf("B %" PRIu64 "u\n", i*2+1);
             counter++;
         }
     }
-    printf("primes: %llu\n", counter);
+    printf("primes: %" PRIu64 "u\n", counter);
 }
 
 
@@ -86,7 +88,7 @@ void old_sieve(uint64_t limit)
 /************************************************************************************/
 /*static void print_prime(int64_t prime)
 {
-    printf("%lld\n", prime);
+    printf("%" PRIu64 "d\n", prime);
 }
 */
 
@@ -122,7 +124,8 @@ TEST simple_sieve_test()
 
         free(table);
 
-        //printf("global_sum = %llu global_cnt = %llu\n", global_sum, global_cnt);
+        // printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n",
+        // global_sum, global_cnt);
 
         ASSERT_EQ(global_sum, hash_results[i][1]);
         ASSERT_EQ(global_cnt, hash_results[i][2]);
