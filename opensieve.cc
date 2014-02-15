@@ -148,9 +148,9 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
     const uint64_t sqrt_limit = sqrt((double)limit) + 1;
 
     /*
-    printf("limit      = %llu\n", limit);
-    printf("sqrt_limit = %llu\n", sqrt_limit);
-    printf("table_size = %llu\n", table_size);
+    printf("limit      = %" PRIu64 "u\n", limit);
+    printf("sqrt_limit = %" PRIu64 "u\n", sqrt_limit);
+    printf("table_size = %" PRIu64 "u\n", table_size);
     */
 
     bitsieve(*table, table_size);
@@ -188,7 +188,7 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
             int64_t j = inv30[i % 30];
             if (j == -1)
             {
-                fprintf(stderr, "It should not be happened! j = -1 at prime=%llu\n", i);
+                fprintf(stderr, "It should not be happened! j = -1 at prime=%" PRIu64 "u\n", i);
                 continue;
             }
             while ( pos <= limit/2 )
@@ -204,7 +204,7 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
             int64_t j = inv30[i % 30];
             if (j == -1)
             {
-                fprintf(stderr, "It should not be happened! j = -1 at prime=%llu\n", i);
+                fprintf(stderr, "It should not be happened! j = -1 at prime=%" PRIu64 "u\n", i);
                 continue;
             }
 
