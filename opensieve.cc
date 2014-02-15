@@ -281,30 +281,3 @@ void process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
         }
     }
 }
-
-
-/************************************************************************************/
-#if 0
-static void print_prime(uint64_t prime)
-{
-    printf("%lld\n", prime);
-}
-#endif
-
-
-/************************************************************************************/
-int old_main(void)
-{
-    uint64_t *table = 0;
-    uint64_t table_size;
-
-    //open_sieve(1000037, &table, table_size);
-    //process_primes(print_prime, table, table_size);
-
-    open_sieve(1000000000, &table, table_size);
-    process_primes(0, table, table_size);
-
-    free(table);
-
-    return 0;
-}

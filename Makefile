@@ -17,7 +17,7 @@ depend: .depend
 
 .depend: $(SRCS)
 	rm -f ./.depend
-	$(CC) $(CXXFLAGS) -MM $^>>./.depend;
+	$(CXX) $(CXXFLAGS) -MM $^>>./.depend;
 
 include .depend
 

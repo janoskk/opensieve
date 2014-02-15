@@ -133,24 +133,6 @@ TEST simple_sieve_test()
 
 
 /************************************************************************************/
-TEST old_main_test()
-{
-    old_main();
-    PASS();
-}
-
-
-/************************************************************************************/
-/*
-TEST sieve_print_test()
-{
-    wheel_sieve(0, 1, print_prime, 0);
-    PASS();
-}
-*/
-
-
-/************************************************************************************/
 SUITE(sieve_suite)
 {
     RUN_TEST(simple_sieve_test);
@@ -158,9 +140,35 @@ SUITE(sieve_suite)
 
 
 /************************************************************************************/
-SUITE(old_main_suite)
+int devel_tests(void)
 {
-    RUN_TEST(old_main_test);
+    uint64_t *table = 0;
+    uint64_t table_size;
+
+    //open_sieve(1000037, &table, table_size);
+    //process_primes(print_prime, table, table_size);
+
+    open_sieve(1000000000, &table, table_size);
+    process_primes(0, table, table_size);
+
+    free(table);
+
+    return 0;
+}
+
+
+/************************************************************************************/
+TEST devel_tests_case()
+{
+    devel_tests();
+    PASS();
+}
+
+
+/************************************************************************************/
+SUITE(devel_tests_suite)
+{
+    RUN_TEST(devel_tests_case);
 }
 
 
@@ -173,7 +181,7 @@ int main(int argc, char **argv)
 {
     GREATEST_MAIN_BEGIN();      /* command-line arguments, initialization. */
     RUN_SUITE(sieve_suite);
-    RUN_SUITE(old_main_suite);
+    RUN_SUITE(devel_tests_suite);
     GREATEST_MAIN_END();        /* display results */
 }
 
