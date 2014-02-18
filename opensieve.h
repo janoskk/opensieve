@@ -1,28 +1,52 @@
+/*
+ *  Copyright 2014 by Janos Kasza
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #ifndef OPENSIEVE_H_
 #define OPENSIEVE_H_
 
 
 /**
- * Process function what will be called for each prime after the current segment is
- * sieved out
+ * Process function that will be called for each prime after the interval is sieved.
  *
- * Parameters:
- *              prime: (each) prime number of the sieved segment
+ * prime: current prime number to be processed
  */
 typedef void SIEVE_PROCESS_FUNC(uint64_t prime);
 
 
-/************************************************************************************/
+/**
+ * Sieves out the interval [0..limit] into the allocated table.
+ * The caller has to free the allocated memory!
+ *
+ * limit: upper bound of the sieved numbers
+ * table: sieve table what is a bit table representing the odd numbers
+ * table_size: size of the sieve table what is allocated by the function
+ */
 void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size);
 
 
-/************************************************************************************/
+/**
+ * Going through the table and calling the process function for every prime number.
+ *
+ * process_for_primes: process function
+ * table: sieve table
+ * table_size size of the sieve table
+ */
 void process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
                     uint64_t *table,
                     uint64_t table_size);
-
-/************************************************************************************/
-int old_main(void);
 
 
 #endif /* OPENSIEVE_H_ */
