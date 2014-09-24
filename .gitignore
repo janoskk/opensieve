@@ -1,0 +1,11 @@
+/Debug
+*.o
+*~
+*.pdf
+*.aux
+*.log
+/tmp
+.project
+.cproject
+tests
+.depend

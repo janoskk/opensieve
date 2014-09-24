@@ -25,7 +25,7 @@
 #include "opensieve.h"
 
 #ifndef SEGMENT_BITS
-  #define SEGMENT_BITS 15
+  #define SEGMENT_BITS 10
 #endif
 #define SEGMENT_SIZE (1<<SEGMENT_BITS)
 //#define SEGMENT_SIZE 1000000000
@@ -178,12 +178,13 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
         IS_PRIME_AT(is_prime, (i-1)/2);
         if (is_prime)
         {
+#define VERSION 1
 #if VERSION == 1
             for (uint64_t j = (i * i - 1) / 2; j <= limit/2; j += i)
             {
                 uint32_t seg = j >> 6;
                 uint64_t off = jkk_asm_shl(1ULL,  (j & 0x3f));
-                table[seg] |= off;
+                (*table)[seg] |= off;
             }
 #elif VERSION == 2
             uint64_t pos = (i * i - 1) / 2;
@@ -191,7 +192,7 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
             {
                 uint32_t seg = pos >> 6;
                 uint64_t off = jkk_asm_shl(1ULL,  (pos & 0x3f));
-                table[seg] |= off;
+                (*table)[seg] |= off;
                 pos = (i * j - 1) / 2;
             }
 #elif VERSION == 3
@@ -211,7 +212,7 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
             {
                 uint32_t seg = pos >> 6;
                 uint64_t off = jkk_asm_shl(1ULL,  (pos & 0x3f));
-                table[seg] |= off;
+                (*table)[seg] |= off;
                 pos += wow30prime[ j & 7 ];
                 j++;
             }
@@ -271,11 +272,12 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
 
 
 /************************************************************************************/
-void process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
+uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
                     uint64_t *table,
-                    uint64_t table_size)
+                    uint64_t table_size,
+                    unsigned current_segment)
 {
-    uint64_t counter = 0;
+	uint64_t prime = 0;
     for(uint64_t i = 0; i < table_size; i++)
     {
         uint64_t num = table[i];
@@ -286,16 +288,105 @@ void process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
             {
                 if ((num & pos) != pos)
                 {
-                    uint64_t prime = (((i << 6) + off) << 1) + 1;
+                    prime = (current_segment * SEGMENT_SIZE) + (((i << 6) + off) << 1) + 1;
                     prime = (prime == 1) ? 2 : prime;
                     if (process_for_primes != 0)
                     {
                         (*process_for_primes)(prime);
                     }
-                    counter++;
                 }
                 off++;
             }
         }
     }
+    return prime;
 }
+
+
+/************************************************************************************/
+static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg, uint64_t &pos)
+{
+    pos <<= 1;
+    seg = (pos == 0) ? seg + 1 : seg;
+    pos = (pos == 0) ? 1 : pos;
+    uint64_t num = table[seg];
+    int diff = 2;
+    for (; seg < table_size; seg++)
+    {
+        for	(; pos != 0; pos <<= 1)
+        {
+            if ((num & pos) != pos)
+            {
+                return diff;
+            }
+            diff += 2;
+        }
+    }
+    return 0;
+}
+
+
+/************************************************************************************/
+void segmented_sieve(int64_t first_segment,
+                     int no_of_segments,
+                     SIEVE_PROCESS_FUNC *process_for_primes)
+{
+    uint64_t first = first_segment * SEGMENT_SIZE + 1;
+    uint64_t last = (first_segment + no_of_segments) * SEGMENT_SIZE;
+    uint64_t sqrt_of_last_elem = (int64_t) sqrt((double)last) + 2;
+
+    uint64_t *small_primes;
+    uint64_t small_primes_size;
+    open_sieve(sqrt_of_last_elem, &small_primes, small_primes_size);
+
+    uint64_t segment[SEGMENT_SIZE>>7];
+
+    uint64_t n = (first == 1) ? 3 : first;
+    uint64_t segment_no = first_segment;
+    while (n < last)
+    {
+        memset(segment, 0x0, (SEGMENT_SIZE>>7) * sizeof(uint64_t));
+        uint64_t segment_first = segment_no * SEGMENT_SIZE + 1;
+        uint64_t segment_last = segment_no * SEGMENT_SIZE + SEGMENT_SIZE;
+        uint64_t seg = 0;
+        uint64_t pos = 1;
+        uint64_t prime = 1;
+        uint64_t diff = 0;
+        while ((diff = get_diff(small_primes, small_primes_size, seg, pos)) > 0)
+        {
+            prime += diff;
+
+            uint64_t next = prime * prime;
+            if (next > segment_last)
+            {
+            	continue;
+            }
+            if (segment_first > next) // almost always, except the smaller primes and in the beginning of sieve
+            {
+                next = ((segment_first) / prime) * prime;
+                // This is wrong! Check the similar parts!
+                // next = (next == first) ? next : next + prime; // to be on the safe side
+                next = (next < segment_first) ? next + prime : next;
+                next = ((next & 1) == 0) ? next + prime : next;
+            }
+            //printf("prime: %llu next: %llu\n", prime, next);
+
+            next = ((next-1) >> 1) % (SEGMENT_SIZE>>1);
+            while (next < SEGMENT_SIZE >> 1)
+            {
+                uint32_t seg = next >> 6;
+                uint64_t off = jkk_asm_shl(1ULL,  next & 0x3f);
+                segment[seg] |= off;
+
+                next += prime;
+            }
+        }
+
+        n = process_primes(process_for_primes, segment, SEGMENT_SIZE >> 7, segment_no);
+        //printf("utolso prim ebben a segment-ben: %llu\n", n);
+
+        segment_no++;
+    }
+
+}
+

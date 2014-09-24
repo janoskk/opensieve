@@ -14,6 +14,9 @@
  *  limitations under the License.
  */
 
+#define GREATEST_STDOUT stderr
+#include "greatest.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,16 +26,12 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-#define GREATEST_STDOUT stderr
-#include "greatest.h"
 #include "opensieve.h"
 
 #define PATTERN_SEGMENT_SIZE 1024
 
 uint64_t global_sum = 0;
 uint64_t global_cnt = 0;
-
-int old_main(void);
 
 
 /************************************************************************************/
@@ -104,11 +103,11 @@ void old_sieve(uint64_t limit)
 
 
 /************************************************************************************/
-/*static void print_prime(int64_t prime)
+static void print_prime(uint64_t prime)
 {
-    printf("%" PRIu64 "d\n", prime);
+    printf("%" PRIu64 "\n", prime);
 }
-*/
+
 
 
 /************************************************************************************/
@@ -138,7 +137,7 @@ TEST simple_sieve_test()
         uint64_t table_size;
 
         open_sieve(hash_results[i][0], &table, table_size);
-        process_primes(hash_func, table, table_size);
+        process_primes(hash_func, table, table_size, 0);
 
         free(table);
 
@@ -150,6 +149,7 @@ TEST simple_sieve_test()
     }
 
     PASS();
+    return 0;
 }
 
 
@@ -163,17 +163,7 @@ SUITE(sieve_suite)
 /************************************************************************************/
 int devel_tests(void)
 {
-    uint64_t *table = 0;
-    uint64_t table_size;
-
-    //open_sieve(1000037, &table, table_size);
-    //process_primes(print_prime, table, table_size);
-
-    open_sieve(1000000000, &table, table_size);
-    process_primes(0, table, table_size);
-
-    free(table);
-
+    segmented_sieve(0, 4, print_prime);
     return 0;
 }
 

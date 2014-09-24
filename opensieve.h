@@ -42,11 +42,23 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size);
  *
  * process_for_primes: process function
  * table: sieve table
- * table_size size of the sieve table
+ * table_size: size of the sieve table
+ * current_segment: for simple sieve it's always zero, but for segmented sieve it's
+ *                  the current number of segment
+ * returns with the last processed prime
  */
-void process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
-                    uint64_t *table,
-                    uint64_t table_size);
+uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
+                        uint64_t *table,
+                        uint64_t table_size,
+                        unsigned current_segment = 0);
+
+/**
+ * ...
+ * process_for_primes: process function
+ */
+void segmented_sieve(int64_t first_segment,
+                     int no_of_segments,
+                     SIEVE_PROCESS_FUNC *process_for_primes);
 
 
 #endif /* OPENSIEVE_H_ */
