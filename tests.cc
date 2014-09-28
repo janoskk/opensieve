@@ -140,7 +140,8 @@ void old_sieve(uint64_t limit)
 /************************************************************************************/
 static void print_prime(uint64_t prime)
 {
-	prime++; //printf("%" PRIu64 "\n", prime);
+	prime++;
+	//printf("%" PRIu64 "\n", prime);
 }
 
 /************************************************************************************/
@@ -204,7 +205,7 @@ SUITE(sieve_suite)
 /************************************************************************************/
 int devel_tests(void)
 {
-	segmented_sieve(0, 4, print_prime);
+	segmented_sieve(0, 100, print_prime);
 	return 0;
 }
 
