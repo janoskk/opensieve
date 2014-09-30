@@ -31,17 +31,35 @@
 #define SEGMENT_SIZE (1<<SEGMENT_BITS)
 //#define SEGMENT_SIZE 1000000000
 
+#define OPEN_SIEVE_VERSION 4
+#define BITSIEVE_WITH_JUMP 1
+#define SEGMENTED_SIEVE_WITH_MASKING 1
+
 char wheel30[] =
-{ 1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4,
-        3, 2, 1, 2 };
+{ 1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2 };
 
 char rem30[] =
 { 1, 7, 11, 13, 17, 19, 23, 29 };
 char wow30[] =
 { 6, 4, 2, 4, 2, 4, 6, 2 };
 char inv30[] =
-{ -1, 0, -1, -1, -1, -1, -1, 1, -1, -1, -1, 2, -1, 3, -1, -1, -1, 4, -1, 5, -1,
-        -1, -1, 6, -1, -1, -1, -1, -1, 7 };
+{ -1, 0, -1, -1, -1, -1, -1, 1, -1, -1, -1, 2, -1, 3, -1, -1, -1, 4, -1, 5, -1, -1, -1, 6, -1, -1, -1, -1, -1, 7 };
+
+/************************************************************************************/
+#define IS_PRIME_AT(is_prime, x) {                              \
+	uint32_t seg = x >> 6;                                      \
+	uint64_t off = jkk_asm_shl(1ULL,  /* 0x3f - */ (x & 0x3f)); \
+	is_prime = ((*table)[seg] & off) == 0;                      \
+}
+
+/************************************************************************************/
+#define SIEVE_AT(x) {                                           \
+	seg = pos >> 6;                                             \
+	off = jkk_asm_shl(1ULL,  (pos & 0x3f));                     \
+	(*table)[seg] |= off;                                       \
+	pos += pos30[x];                                            \
+	j++;                                                        \
+}
 
 /************************************************************************************/
 void bitsieve(uint64_t table[], unsigned length)
@@ -87,63 +105,6 @@ void bitsieve(uint64_t table[], unsigned length)
 }
 
 /************************************************************************************/
-void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
-{
-    uint64_t a_3 = 0x2492492492492492;
-    uint64_t a_5 = 0x4210842108421084;
-    uint64_t a_7 = 0x810204081020408;
-    uint64_t a_11 = 0x1002004008010020;
-    uint64_t a_13 = 0x400200100080040;
-    uint64_t a_17 = 0x800040002000100;
-    uint64_t a_19 = 0x800010000200;
-
-    register uint64_t acc = 0; // !!
-    register uint64_t c = 0;
-
-    MASK_R(acc, c, 3, a_3, table_offset % 64);
-    MASK_L(acc, c, 5, a_5, table_offset % 64);
-    MASK_R(acc, c, 7, a_7, table_offset % 64);
-    MASK_L(acc, c, 11, a_11, (2 * table_offset) % 64);
-    MASK_L(acc, c, 13, a_13, table_offset % 64);
-    MASK_L(acc, c, 17, a_17, (4 * table_offset) % 64);
-    MASK_R(acc, c, 19, a_19, (7 * table_offset) % 64);
-
-    table[0] = acc;
-
-    for (unsigned i = 1; i < length; i++)
-    {
-        register uint64_t acc = 0; // !!
-        register uint64_t c = 0;
-
-        MASK_R(acc, c, 3, a_3, 1);
-        MASK_L(acc, c, 5, a_5, 1);
-        MASK_R(acc, c, 7, a_7, 1);
-        MASK_L(acc, c, 11, a_11, 2);
-        MASK_L(acc, c, 13, a_13, 1);
-        MASK_L(acc, c, 17, a_17, 4);
-        MASK_R(acc, c, 19, a_19, 7);
-
-        table[i] = acc;
-    }
-}
-
-/************************************************************************************/
-#define IS_PRIME_AT(is_prime, x) {                              \
-	uint32_t seg = x >> 6;                                      \
-	uint64_t off = jkk_asm_shl(1ULL,  /* 0x3f - */ (x & 0x3f)); \
-	is_prime = ((*table)[seg] & off) == 0;                      \
-}
-
-/************************************************************************************/
-#define SIEVE_AT(x) {                                           \
-	seg = pos >> 6;                                             \
-	off = jkk_asm_shl(1ULL,  (pos & 0x3f));                     \
-	(*table)[seg] |= off;                                       \
-	pos += pos30[x];                                            \
-	j++;                                                        \
-}
-
-/************************************************************************************/
 void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
 {
     table_size = (((limit + 1) >> 1) + 63) >> 6;
@@ -163,15 +124,14 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
         IS_PRIME_AT(is_prime, (i - 1) / 2);
         if (is_prime)
         {
-#define VERSION 1
-#if VERSION == 1
+#if OPEN_SIEVE_VERSION == 1
             for (uint64_t j = (i * i - 1) / 2; j <= limit / 2; j += i)
             {
                 uint32_t seg = j >> 6;
                 uint64_t off = jkk_asm_shl(1ULL, (j & 0x3f));
                 (*table)[seg] |= off;
             }
-#elif VERSION == 2
+#elif OPEN_SIEVE_VERSION == 2
             uint64_t pos = (i * i - 1) / 2;
             for (uint64_t j = i; pos <= limit/2; j += wheel30[j % 30])
             {
@@ -180,7 +140,7 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
                 (*table)[seg] |= off;
                 pos = (i * j - 1) / 2;
             }
-#elif VERSION == 3
+#elif OPEN_SIEVE_VERSION == 3
             for (int j = 0; j < 8; j++)
             {
                 wow30prime[j] = (wow30[j] >> 1) * i;
@@ -256,8 +216,8 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
 }
 
 /************************************************************************************/
-uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
-        uint64_t table_size, unsigned current_segment)
+uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table, uint64_t table_size,
+        unsigned current_segment)
 {
     uint64_t prime = 0;
     for (uint64_t i = 0; i < table_size; i++)
@@ -270,8 +230,7 @@ uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
             {
                 if ((num & pos) != pos)
                 {
-                    prime = (current_segment * SEGMENT_SIZE)
-                            + (((i << 6) + off) << 1) + 1;
+                    prime = (current_segment * SEGMENT_SIZE) + (((i << 6) + off) << 1) + 1;
                     prime = (prime == 1) ? 2 : prime;
                     if (process_for_primes != 0)
                     {
@@ -286,8 +245,7 @@ uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
 }
 
 /************************************************************************************/
-static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg,
-        uint64_t &pos)
+static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg, uint64_t &pos)
 {
     pos <<= 1;
     seg = (pos == 0) ? seg + 1 : seg;
@@ -310,8 +268,113 @@ static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg,
 }
 
 /************************************************************************************/
-void segmented_sieve(int64_t first_segment, int no_of_segments,
-        SIEVE_PROCESS_FUNC *process_for_primes)
+void bitsieve(uint64_t table[], unsigned length, int table_offset)
+{
+    uint64_t a_3 = 0x2492492492492492;
+    uint64_t a_5 = 0x4210842108421084;
+    uint64_t a_7 = 0x810204081020408;
+    uint64_t a_11 = 0x1002004008010020;
+    uint64_t a_13 = 0x400200100080040;
+    uint64_t a_17 = 0x800040002000100;
+    uint64_t a_19 = 0x800010000200;
+
+#if BITSIEVE_WITH_JUMP
+    register uint64_t acc = 0; // !!
+    register uint64_t c = 0;
+
+    for (int i = 0; i < table_offset % 3; i++)
+        MASK_R(acc, c, 3, a_3, 1);
+    for (int i = 0; i < table_offset % 5; i++)
+        MASK_L(acc, c, 5, a_5, 1);
+    for (int i = 0; i < table_offset % 7; i++)
+        MASK_R(acc, c, 7, a_7, 1);
+    for (int i = 0; i < table_offset % 11; i++)
+        MASK_L(acc, c, 11, a_11, 2);
+    for (int i = 0; i < table_offset % 13; i++)
+        MASK_L(acc, c, 13, a_13, 1);
+    for (int i = 0; i < table_offset % 17; i++)
+        MASK_L(acc, c, 17, a_17, 4);
+    for (int i = 0; i < table_offset % 19; i++)
+        MASK_R(acc, c, 19, a_19, 7);
+
+#else
+    for (int i = 0; i < table_offset && table_offset > 0; i++)
+    {
+        register uint64_t acc = 0; // !!
+        register uint64_t c = 0;
+
+        MASK_R(acc, c, 3, a_3, 1);
+        MASK_L(acc, c, 5, a_5, 1);
+        MASK_R(acc, c, 7, a_7, 1);
+        MASK_L(acc, c, 11, a_11, 2);
+        MASK_L(acc, c, 13, a_13, 1);
+        MASK_L(acc, c, 17, a_17, 4);
+        MASK_R(acc, c, 19, a_19, 7);
+    }
+#endif
+
+#define DEBUG_BITSIEVE 0
+#if DEBUG_BITSIEVE
+    printf("BEFORE THE WORK of offset %u\n", table_offset);
+    printf("a_3:\t %llx\n", a_3);
+    printf("a_5:\t %llx\n", a_5);
+    printf("a_7:\t %llx\n", a_7);
+    printf("a_11:\t %llx\n", a_11);
+    printf("a_13:\t %llx\n", a_13);
+    printf("a_17:\t %llx\n", a_17);
+    printf("a_19:\t %llx\n", a_19);
+#endif
+
+    uint64_t b = a_3;
+    b |= a_5;
+    b |= a_7;
+    b |= a_11;
+    b |= a_13;
+    b |= a_17;
+    b |= a_19;
+    table[0] = b;
+
+    for (int i = 1; i < (int) length; i++)
+    {
+        register uint64_t acc = 0; // !!
+        register uint64_t c = 0;
+
+        MASK_R(acc, c, 3, a_3, 1);
+        MASK_L(acc, c, 5, a_5, 1);
+        MASK_R(acc, c, 7, a_7, 1);
+        MASK_L(acc, c, 11, a_11, 2);
+        MASK_L(acc, c, 13, a_13, 1);
+        MASK_L(acc, c, 17, a_17, 4);
+        MASK_R(acc, c, 19, a_19, 7);
+
+        table[i] = acc;
+    }
+#if DEBUG_BITSIEVE
+    register uint64_t acc = 0; // !!
+    register uint64_t c = 0;
+
+    MASK_R(acc, c, 3, a_3, 1);
+    MASK_L(acc, c, 5, a_5, 1);
+    MASK_R(acc, c, 7, a_7, 1);
+    MASK_L(acc, c, 11, a_11, 2);
+    MASK_L(acc, c, 13, a_13, 1);
+    MASK_L(acc, c, 17, a_17, 4);
+    MASK_R(acc, c, 19, a_19, 7);
+
+    printf("AFTER THE WORK of offset %u (the next before should be the same as that)\n",
+            table_offset);
+    printf("a_3:\t %llx\n", a_3);
+    printf("a_5:\t %llx\n", a_5);
+    printf("a_7:\t %llx\n", a_7);
+    printf("a_11:\t %llx\n", a_11);
+    printf("a_13:\t %llx\n", a_13);
+    printf("a_17:\t %llx\n", a_17);
+    printf("a_19:\t %llx\n", a_19);
+#endif
+}
+
+/************************************************************************************/
+void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes)
 {
     uint64_t first = first_segment * SEGMENT_SIZE + 1;
     uint64_t last = (first_segment + no_of_segments) * SEGMENT_SIZE;
@@ -332,16 +395,13 @@ void segmented_sieve(int64_t first_segment, int no_of_segments,
         uint64_t segment_last = segment_no * SEGMENT_SIZE + SEGMENT_SIZE;
         uint64_t seg = 0;
         uint64_t diff = 0;
-#define WITH_MASK_SIEVE 0
-#if WITH_MASK_SIEVE
-        // TODO: test this code carefully!
+#if SEGMENTED_SIEVE_WITH_MASKING
         uint64_t prime = 19;
         uint64_t pos = 512;
-        bitsieve(segment, SEGMENT_SIZE >> 7, segment_no * SEGMENT_SIZE);
-        if (first_segment == 0)
+        bitsieve(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
+        if (segment_no == 0)
         {
-            segment[0] &= 0xffffffffffffffff
-            ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
+            segment[0] &= 0xffffffffffffffff ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
         }
         while ((diff = get_diff(small_primes, small_primes_size, seg, pos)) > 0)
 #else
@@ -351,7 +411,6 @@ void segmented_sieve(int64_t first_segment, int no_of_segments,
 #endif
         {
             prime += diff;
-            //printf("sieving with prime %" PRIu64 "\n", prime);
 
             uint64_t next = prime * prime;
             if (next > segment_last)
@@ -366,7 +425,6 @@ void segmented_sieve(int64_t first_segment, int no_of_segments,
                 next = (next < segment_first) ? next + prime : next;
                 next = ((next & 1) == 0) ? next + prime : next;
             }
-            //printf("prime: %llu next: %llu\n", prime, next);
 
             next = ((next - 1) >> 1) % (SEGMENT_SIZE >> 1);
             while (next < SEGMENT_SIZE >> 1)
@@ -379,9 +437,8 @@ void segmented_sieve(int64_t first_segment, int no_of_segments,
             }
         }
 
-        n = process_primes(process_for_primes, segment,
-        SEGMENT_SIZE >> 7, segment_no);
-        //printf("utolso prim ebben a segment-ben: %llu\n", n);
+        // n is the last sieving prime in that segment
+        n = process_primes(process_for_primes, segment, SEGMENT_SIZE >> 7, segment_no);
 
         segment_no++;
     }
