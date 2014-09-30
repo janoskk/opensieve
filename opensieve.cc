@@ -31,9 +31,10 @@
 #define SEGMENT_SIZE (1<<SEGMENT_BITS)
 //#define SEGMENT_SIZE 1000000000
 
-#define OPEN_SIEVE_VERSION 4
+#define OPEN_SIEVE_VERSION 2
 #define BITSIEVE_WITH_JUMP 1
 #define SEGMENTED_SIEVE_WITH_MASKING 1
+#define SEGMENTED_SIEVE_VERSION 2
 
 char wheel30[] =
 { 1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2 };
@@ -53,10 +54,10 @@ char inv30[] =
 }
 
 /************************************************************************************/
-#define SIEVE_AT(x) {                                           \
+#define SIEVE_AT(x, buf) {                                           \
 	seg = pos >> 6;                                             \
 	off = jkk_asm_shl(1ULL,  (pos & 0x3f));                     \
-	(*table)[seg] |= off;                                       \
+	buf[seg] |= off;                                       \
 	pos += pos30[x];                                            \
 	j++;                                                        \
 }
@@ -133,7 +134,7 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
             }
 #elif OPEN_SIEVE_VERSION == 2
             uint64_t pos = (i * i - 1) / 2;
-            for (uint64_t j = i; pos <= limit/2; j += wheel30[j % 30])
+            for (uint64_t j = i; pos <= limit / 2; j += wheel30[j % 30])
             {
                 uint32_t seg = pos >> 6;
                 uint64_t off = jkk_asm_shl(1ULL, (pos & 0x3f));
@@ -171,34 +172,34 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
             }
 
             static uint64_t pos30[8];
-            pos30[0] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[1] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[2] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[3] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[4] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[5] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[6] = (wow30[ j++ & 7 ] >> 1) * i;
-            pos30[7] = (wow30[ j++ & 7 ] >> 1) * i;
+            pos30[0] = (wow30[j++ & 7] >> 1) * i;
+            pos30[1] = (wow30[j++ & 7] >> 1) * i;
+            pos30[2] = (wow30[j++ & 7] >> 1) * i;
+            pos30[3] = (wow30[j++ & 7] >> 1) * i;
+            pos30[4] = (wow30[j++ & 7] >> 1) * i;
+            pos30[5] = (wow30[j++ & 7] >> 1) * i;
+            pos30[6] = (wow30[j++ & 7] >> 1) * i;
+            pos30[7] = (wow30[j++ & 7] >> 1) * i;
 
-            while (pos <= limit/2 - 15 * i)
+            while (pos <= limit / 2 - 15 * i)
             {
                 uint32_t seg;
                 uint64_t off;
-                SIEVE_AT(0);
-                SIEVE_AT(1);
-                SIEVE_AT(2);
-                SIEVE_AT(3);
-                SIEVE_AT(4);
-                SIEVE_AT(5);
-                SIEVE_AT(6);
-                SIEVE_AT(7);
+                SIEVE_AT(0, (*table));
+                SIEVE_AT(1, (*table));
+                SIEVE_AT(2, (*table));
+                SIEVE_AT(3, (*table));
+                SIEVE_AT(4, (*table));
+                SIEVE_AT(5, (*table));
+                SIEVE_AT(6, (*table));
+                SIEVE_AT(7, (*table));
             }
 
-            for (int k = 0; pos <= limit/2; k++)
+            for (int k = 0; pos <= limit / 2; k++)
             {
                 uint32_t seg;
                 uint64_t off;
-                SIEVE_AT(k & 7);
+                SIEVE_AT(k & 7, (*table));
             }
 #endif
 
@@ -426,15 +427,25 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
                 next = ((next & 1) == 0) ? next + prime : next;
             }
 
+#if SEGMENTED_SIEVE_VERSION == 1
             next = ((next - 1) >> 1) % (SEGMENT_SIZE >> 1);
             while (next < SEGMENT_SIZE >> 1)
             {
                 uint32_t seg = next >> 6;
                 uint64_t off = jkk_asm_shl(1ULL, next & 0x3f);
                 segment[seg] |= off;
-
                 next += prime;
             }
+#elif SEGMENTED_SIEVE_VERSION == 2
+            uint64_t pos = next;
+            for (uint64_t j = next / prime; pos <= segment_last; j += wheel30[j % 30])
+            {
+                uint32_t seg = (((pos - 1) / 2) % (SEGMENT_SIZE >> 1)) >> 6;
+                uint64_t off = jkk_asm_shl(1ULL, (((pos - 1) / 2) & 0x3f));
+                segment[seg] |= off;
+                pos = prime * j;
+            }
+#endif
         }
 
         // n is the last sieving prime in that segment
