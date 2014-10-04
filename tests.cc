@@ -29,9 +29,11 @@
 #include "arithmetic.h"
 #include "opensieve.h"
 
+using namespace opensieve;
+
 #define PATTERN_SEGMENT_SIZE 1024
 
-#define PERFORMANCE_TEST 0
+#define PERFORMANCE_TEST 1
 
 uint64_t global_sum = 0;
 uint64_t global_cnt = 0;
@@ -175,8 +177,8 @@ TEST simple_sieve_test()
         uint64_t *table = 0;
         uint64_t table_size;
 
-        open_sieve(hash_results[i][0], &table, table_size);
-        process_primes(hash_func, table, table_size, 0);
+        sieve_small(hash_results[i][0], &table, table_size);
+        opensieve::process_primes(hash_func, table, table_size, 0);
 
         free(table);
 
@@ -210,9 +212,9 @@ SUITE(sieve_suite)
 int devel_tests(void)
 {
 #if PERFORMANCE_TEST
-    segmented_sieve(0, 500, print_prime);
+    opensieve::sieve(0, 500, print_prime);
 #else
-    segmented_sieve(0, 100, print_prime);
+    opensieve::sieve(0, 100, print_prime);
 #endif
     return 0;
 }

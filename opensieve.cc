@@ -36,6 +36,8 @@
 #define SEGMENTED_SIEVE_WITH_MASKING 1
 #define SEGMENTED_SIEVE_VERSION 1
 
+namespace opensieve
+{
 char wheel30[] =
 { 1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2 };
 
@@ -106,7 +108,7 @@ void bitsieve(uint64_t table[], unsigned length)
 }
 
 /************************************************************************************/
-void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
+void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
 {
     table_size = (((limit + 1) >> 1) + 63) >> 6;
     *table = (uint64_t*) valloc(table_size * sizeof(uint64_t));
@@ -217,8 +219,8 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size)
 }
 
 /************************************************************************************/
-uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table, uint64_t table_size,
-        unsigned current_segment)
+uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
+        uint64_t table_size, unsigned current_segment)
 {
     uint64_t prime = 0;
     for (uint64_t i = 0; i < table_size; i++)
@@ -375,7 +377,7 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
 }
 
 /************************************************************************************/
-void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes)
+void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes)
 {
     uint64_t first = first_segment * SEGMENT_SIZE + 1;
     uint64_t last = (first_segment + no_of_segments) * SEGMENT_SIZE;
@@ -383,7 +385,7 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
 
     uint64_t *small_primes;
     uint64_t small_primes_size;
-    open_sieve(sqrt_of_last_elem, &small_primes, small_primes_size);
+    sieve_small(sqrt_of_last_elem, &small_primes, small_primes_size);
 
     uint64_t segment[SEGMENT_SIZE >> 7];
 
@@ -481,5 +483,7 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
         segment_no++;
     }
 
+    free(small_primes);
 }
 
+}

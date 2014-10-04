@@ -17,14 +17,14 @@
 #ifndef OPENSIEVE_H_
 #define OPENSIEVE_H_
 
-
+namespace opensieve
+{
 /**
  * Process function that will be called for each prime after the interval is sieved.
  *
  * prime: current prime number to be processed
  */
 typedef void SIEVE_PROCESS_FUNC(uint64_t prime);
-
 
 /**
  * Sieves out the interval [0..limit] into the allocated table.
@@ -34,8 +34,7 @@ typedef void SIEVE_PROCESS_FUNC(uint64_t prime);
  * table: sieve table what is a bit table representing the odd numbers
  * table_size: size of the sieve table what is allocated by the function
  */
-void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size);
-
+void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size);
 
 /**
  * Going through the table and calling the process function for every prime number.
@@ -47,18 +46,18 @@ void open_sieve(uint64_t limit, uint64_t **table, uint64_t& table_size);
  *                  the current number of segment
  * returns with the last processed prime
  */
-uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes,
-                        uint64_t *table,
-                        uint64_t table_size,
-                        unsigned current_segment = 0);
+uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table, uint64_t table_size,
+        unsigned current_segment = 0);
 
 /**
- * ...
+ * Sieves out no_of_segments segments starting with the first_segment.
+ *
+ * first_segment: start the sieve with that segment
+ * no_of_segments: that many segments will be sieved
  * process_for_primes: process function
  */
-void segmented_sieve(int64_t first_segment,
-                     int no_of_segments,
-                     SIEVE_PROCESS_FUNC *process_for_primes);
+void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes);
 
+}
 
 #endif /* OPENSIEVE_H_ */
