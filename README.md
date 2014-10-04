@@ -11,7 +11,7 @@ High-performance implementation of the sieve of Eratosthenes algorithm. It is op
 - wheel sieve method modulo 30 is applied
 - (single threaded)
 
-On a modern computer it sieves out up to 1'000'000'000 and iterates through the primes in less than 2 seconds (tested with i7-3615QM processor).
+On a modern computer it sieves out up to 1'000'000'000 and iterates through the primes in less than 1 seconds (tested with i7-3615QM processor).
 
 What's next?
 ------------

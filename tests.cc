@@ -210,7 +210,7 @@ SUITE(sieve_suite)
 int devel_tests(void)
 {
 #if PERFORMANCE_TEST
-    segmented_sieve(0, 3000, print_prime);
+    segmented_sieve(0, 500, print_prime);
 #else
     segmented_sieve(0, 100, print_prime);
 #endif

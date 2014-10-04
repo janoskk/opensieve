@@ -34,7 +34,7 @@
 #define OPEN_SIEVE_VERSION 2
 #define BITSIEVE_WITH_JUMP 1
 #define SEGMENTED_SIEVE_WITH_MASKING 1
-#define SEGMENTED_SIEVE_VERSION 2
+#define SEGMENTED_SIEVE_VERSION 1
 
 char wheel30[] =
 { 1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2 };
@@ -231,7 +231,7 @@ uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
             {
                 if ((num & pos) != pos)
                 {
-                    prime = (current_segment * SEGMENT_SIZE) + (((i << 6) + off) << 1) + 1;
+                    prime = ((uint64_t) current_segment * SEGMENT_SIZE) + (((i << 6) + off) << 1) + 1;
                     prime = (prime == 1) ? 2 : prime;
                     if (process_for_primes != 0)
                     {
@@ -418,6 +418,8 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
             {
                 continue;
             }
+
+#if SEGMENTED_SIEVE_VERSION == 1
             if (segment_first > next) // almost always, except the smaller primes and in the beginning of sieve
             {
                 next = ((segment_first) / prime) * prime;
@@ -426,9 +428,7 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
                 next = (next < segment_first) ? next + prime : next;
                 next = ((next & 1) == 0) ? next + prime : next;
             }
-
-#if SEGMENTED_SIEVE_VERSION == 1
-            next = ((next - 1) >> 1) % (SEGMENT_SIZE >> 1);
+            next = ((next - 1) >> 1) % ((SEGMENT_SIZE >> 1));
             while (next < SEGMENT_SIZE >> 1)
             {
                 uint32_t seg = next >> 6;
@@ -437,6 +437,13 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
                 next += prime;
             }
 #elif SEGMENTED_SIEVE_VERSION == 2
+            if (segment_first > next) // almost always, except the smaller primes and in the beginning of sieve
+            {
+                next = (segment_first / prime) * prime; // ezt kene optolni j-hez! *prime nem kell idd
+                // at this point, next always <= segment_first
+                next = (next < segment_first) ? next + prime : next;
+                next = ((next & 1) == 0) ? next + prime : next;
+            }
             uint64_t pos = next;
             for (uint64_t j = next / prime; pos <= segment_last; j += wheel30[j % 30])
             {
@@ -444,6 +451,26 @@ void segmented_sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FU
                 uint64_t off = jkk_asm_shl(1ULL, (((pos - 1) / 2) & 0x3f));
                 segment[seg] |= off;
                 pos = prime * j;
+            }
+#elif SEGMENTED_SIEVE_VERSION == 3
+            uint64_t multi = prime;
+            if (segment_first > next) // almost always, except the smaller primes and in the beginning of sieve
+            {
+                multi = segment_first / prime;
+                next = (segment_first / prime) * prime;
+                // at this point, next always <= segment_first
+                multi = (next < segment_first) ? multi + 1 : multi;
+                next = (next < segment_first) ? next + prime : next;
+                multi = ((next & 1) == 0) ? multi + 1 : multi;
+                next = ((next & 1) == 0) ? next + prime : next;
+            }
+            uint64_t pos = (next - 1) >> 1;
+            for (uint64_t j = multi; pos <= segment_last >> 1; j += wheel30[j % 30])
+            {
+                uint32_t seg = (pos & ((SEGMENT_SIZE >> 1) - 1)) >> 6;
+                uint64_t off = jkk_asm_shl(1ULL, (pos & 0x3f));
+                segment[seg] |= off;
+                pos = (prime * j - 1) >> 1;
             }
 #endif
         }
