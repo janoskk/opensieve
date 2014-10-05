@@ -31,12 +31,37 @@
 
 using namespace opensieve;
 
+#define TEST_FILE_1 "test_results/test_1_os.txt"
 #define PATTERN_SEGMENT_SIZE 1024
 
 #define PERFORMANCE_TEST 1
 
 uint64_t global_sum = 0;
 uint64_t global_cnt = 0;
+FILE *global_file = 0;
+
+/************************************************************************************/
+static void print_prime(uint64_t prime)
+{
+#if PERFORMANCE_TEST == 1
+    prime++;
+#else
+    printf("%" PRIu64 "\n", prime);
+#endif
+}
+
+/************************************************************************************/
+static void write_prime(uint64_t prime)
+{
+    fprintf(global_file, "%" PRIu64 "\n", prime);
+}
+
+/************************************************************************************/
+static void hash_func(uint64_t prime)
+{
+    global_sum += prime;
+    global_cnt++;
+}
 
 /************************************************************************************/
 TEST assembly_test()
@@ -141,23 +166,6 @@ void old_sieve(uint64_t limit)
 }
 
 /************************************************************************************/
-static void print_prime(uint64_t prime)
-{
-#if PERFORMANCE_TEST == 1
-    prime++;
-#else
-    printf("%" PRIu64 "\n", prime);
-#endif
-}
-
-/************************************************************************************/
-static void hash_func(uint64_t prime)
-{
-    global_sum += prime;
-    global_cnt++;
-}
-
-/************************************************************************************/
 TEST simple_sieve_test()
 {
     uint64_t hash_results[][3] =
@@ -178,7 +186,7 @@ TEST simple_sieve_test()
         uint64_t table_size;
 
         sieve_small(hash_results[i][0], &table, table_size);
-        opensieve::process_primes(hash_func, table, table_size, 0);
+        process_primes(hash_func, table, table_size, 0);
 
         free(table);
 
@@ -197,6 +205,20 @@ TEST simple_sieve_test()
 }
 
 /************************************************************************************/
+TEST file_sieve_test()
+{
+    global_file = fopen(TEST_FILE_1, "w");
+    ASSERTm("File " TEST_FILE_1 " cannot be open!", global_file != NULL)
+    ;
+
+    sieve(0, 100, write_prime);
+
+    fclose(global_file);
+    PASS()
+    ;
+}
+
+/************************************************************************************/
 SUITE(general_suite)
 {
     RUN_TEST(assembly_test);
@@ -206,15 +228,17 @@ SUITE(general_suite)
 SUITE(sieve_suite)
 {
     RUN_TEST(simple_sieve_test);
+    RUN_TEST(file_sieve_test);
 }
 
 /************************************************************************************/
 int devel_tests(void)
 {
 #if PERFORMANCE_TEST
-    opensieve::sieve(0, 500, print_prime);
+//    sieve(0, 500, print_prime);
+    sieve(0, 3000, print_prime);
 #else
-    opensieve::sieve(0, 100, print_prime);
+    sieve(0, 100, print_prime);
 #endif
     return 0;
 }

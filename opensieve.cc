@@ -32,7 +32,6 @@
 //#define SEGMENT_SIZE 1000000000
 
 #define OPEN_SIEVE_VERSION 2
-#define BITSIEVE_WITH_JUMP 1
 #define SEGMENTED_SIEVE_WITH_MASKING 1
 #define SEGMENTED_SIEVE_VERSION 1
 
@@ -86,8 +85,8 @@ void bitsieve(uint64_t table[], unsigned length)
 
     for (unsigned i = 1; i < length; i++)
     {
-        register uint64_t acc = 0; // !!
-        register uint64_t c = 0;
+        uint64_t acc = 0; // !!
+        uint64_t c = 0;
 
         /*
          * TODO: maybe the masks can be improved like this:
@@ -219,8 +218,8 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
 }
 
 /************************************************************************************/
-uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
-        uint64_t table_size, unsigned current_segment)
+uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table, uint64_t table_size,
+        unsigned current_segment)
 {
     uint64_t prime = 0;
     for (uint64_t i = 0; i < table_size; i++)
@@ -281,7 +280,6 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
     uint64_t a_17 = 0x800040002000100;
     uint64_t a_19 = 0x800010000200;
 
-#if BITSIEVE_WITH_JUMP
     register uint64_t acc = 0; // !!
     register uint64_t c = 0;
 
@@ -299,22 +297,6 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
         MASK_L(acc, c, 17, a_17, 4);
     for (int i = 0; i < table_offset % 19; i++)
         MASK_R(acc, c, 19, a_19, 7);
-
-#else
-    for (int i = 0; i < table_offset && table_offset > 0; i++)
-    {
-        register uint64_t acc = 0; // !!
-        register uint64_t c = 0;
-
-        MASK_R(acc, c, 3, a_3, 1);
-        MASK_L(acc, c, 5, a_5, 1);
-        MASK_R(acc, c, 7, a_7, 1);
-        MASK_L(acc, c, 11, a_11, 2);
-        MASK_L(acc, c, 13, a_13, 1);
-        MASK_L(acc, c, 17, a_17, 4);
-        MASK_R(acc, c, 19, a_19, 7);
-    }
-#endif
 
 #define DEBUG_BITSIEVE 0
 #if DEBUG_BITSIEVE
@@ -339,8 +321,8 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
 
     for (int i = 1; i < (int) length; i++)
     {
-        register uint64_t acc = 0; // !!
-        register uint64_t c = 0;
+        uint64_t acc = 0; // !!
+        uint64_t c = 0;
 
         MASK_R(acc, c, 3, a_3, 1);
         MASK_L(acc, c, 5, a_5, 1);
@@ -353,8 +335,8 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
         table[i] = acc;
     }
 #if DEBUG_BITSIEVE
-    register uint64_t acc = 0; // !!
-    register uint64_t c = 0;
+    uint64_t acc = 0; // !!
+    uint64_t c = 0;
 
     MASK_R(acc, c, 3, a_3, 1);
     MASK_L(acc, c, 5, a_5, 1);
