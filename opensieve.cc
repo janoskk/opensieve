@@ -468,4 +468,10 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
     free(small_primes);
 }
 
+//void hmm(uint64_t *ptr, unsigned length)
+//{
+//
+//}
+
 }
+

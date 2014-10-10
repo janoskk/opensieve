@@ -1,6 +1,6 @@
 CXXFLAGS += -g -W -Wall -Werror -m64 -march=core2 -O3 -pipe 
 
-OBJS=tests.o opensieve.o
+OBJS=tests.o opensieve.o arithmetic.o
 SRCS=$(wildcard *.cc)
 BINS=tests
 

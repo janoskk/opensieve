@@ -35,6 +35,9 @@
         acc |= num_var;                       \
 }
 
+/************************************************************************************/
+extern "C" { uint64_t masking(uint64_t *ptr, unsigned length); }
+extern "C" { uint64_t testing(uint64_t *ptr, unsigned length); }
 
 /************************************************************************************/
 /*
@@ -43,12 +46,11 @@
 inline uint64_t jkk_asm_shl(uint64_t num, int bits)
 {
     __asm__("shlq %%cl, %%rax;"
-        : "=a" (num)
-                    : "a" (num), "c" (bits)
-                   );
+            : "=a" (num)
+            : "a" (num), "c" (bits)
+    );
     return num;
 }
-
 
 /************************************************************************************/
 /*
@@ -57,9 +59,9 @@ inline uint64_t jkk_asm_shl(uint64_t num, int bits)
 inline uint64_t jkk_asm_shr(uint64_t num, int bits)
 {
     __asm__("shrq %%cl, %%rax;"
-        : "=a" (num)
-                    : "a" (num), "c" (bits)
-                   );
+            : "=a" (num)
+            : "a" (num), "c" (bits)
+    );
     return num;
 }
 
@@ -70,12 +72,11 @@ inline uint64_t jkk_asm_shr(uint64_t num, int bits)
 inline uint64_t jkk_asm_rol(uint64_t num, int bits)
 {
     __asm__("rolq %%cl, %%rax;"
-        : "=a" (num)
-                    : "a" (num), "c" (bits)
-                   );
+            : "=a" (num)
+            : "a" (num), "c" (bits)
+    );
     return num;
 }
-
 
 /************************************************************************************/
 /*
@@ -84,20 +85,19 @@ inline uint64_t jkk_asm_rol(uint64_t num, int bits)
 inline uint64_t jkk_asm_ror(uint64_t num, int bits)
 {
     __asm__("rorq %%cl, %%rax;"
-        : "=a" (num)
-                    : "a" (num), "c" (bits)
-                   );
+            : "=a" (num)
+            : "a" (num), "c" (bits)
+    );
     return num;
 }
-
 
 /************************************************************************************/
 inline uint64_t jkk_asm_bsf(uint64_t num)
 {
     uint64_t ret = 0;
     asm("bsf %1, %0;"
-    :"=r" (ret)     /* output */
-                :"r" (num)      /* input */);
+            :"=r" (ret) /* output */
+            :"r" (num) /* input */);
     return ret;
 }
 

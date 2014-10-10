@@ -101,6 +101,30 @@ TEST assembly_test()
 }
 
 /************************************************************************************/
+TEST masking_test()
+{
+#define MASKING_TEST_LENGTH 1024
+    uint64_t arr1[MASKING_TEST_LENGTH];
+    masking(arr1, MASKING_TEST_LENGTH);
+
+    uint64_t arr2[MASKING_TEST_LENGTH];
+    opensieve::bitsieve(arr2, MASKING_TEST_LENGTH, 0);
+
+    for (unsigned i = 0; i < MASKING_TEST_LENGTH; i++)
+        ASSERT_EQ(arr1[i], arr2[i])
+        ;
+
+    uint64_t arr3[10];
+    for (unsigned i = 0; i < 10; i++)
+        arr3[i] = i + 1;
+
+    printf("testing: %llu\n", testing(arr3, 10));
+
+    PASS()
+    ;
+}
+
+/************************************************************************************/
 void show_pattern(int prime)
 {
     char char_table[PATTERN_SEGMENT_SIZE];
@@ -222,6 +246,7 @@ TEST file_sieve_test()
 SUITE(general_suite)
 {
     RUN_TEST(assembly_test);
+    RUN_TEST(masking_test);
 }
 
 /************************************************************************************/
@@ -267,8 +292,8 @@ int main(int argc, char **argv)
     GREATEST_MAIN_BEGIN()
     ; /* command-line arguments, initialization. */
     RUN_SUITE(general_suite);
-    RUN_SUITE(sieve_suite);
-    RUN_SUITE(devel_tests_suite);
+    //RUN_SUITE(sieve_suite);
+    //RUN_SUITE(devel_tests_suite);
     GREATEST_MAIN_END(); /* display results */
 }
 

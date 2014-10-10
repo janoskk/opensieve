@@ -58,6 +58,11 @@ uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
  */
 void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes);
 
+/**
+ * TODO: docu
+ */
+void bitsieve(uint64_t table[], unsigned length, int table_offset);
+
 }
 
 #endif /* OPENSIEVE_H_ */
