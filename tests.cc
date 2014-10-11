@@ -105,7 +105,7 @@ TEST masking_test()
 {
 #define MASKING_TEST_LENGTH 1024
     uint64_t arr1[MASKING_TEST_LENGTH];
-    masking(arr1, MASKING_TEST_LENGTH);
+    masking(arr1, MASKING_TEST_LENGTH, 0);
 
     uint64_t arr2[MASKING_TEST_LENGTH];
     opensieve::bitsieve(arr2, MASKING_TEST_LENGTH, 0);
@@ -292,8 +292,8 @@ int main(int argc, char **argv)
     GREATEST_MAIN_BEGIN()
     ; /* command-line arguments, initialization. */
     RUN_SUITE(general_suite);
-    //RUN_SUITE(sieve_suite);
-    //RUN_SUITE(devel_tests_suite);
+    RUN_SUITE(sieve_suite);
+    RUN_SUITE(devel_tests_suite);
     GREATEST_MAIN_END(); /* display results */
 }
 

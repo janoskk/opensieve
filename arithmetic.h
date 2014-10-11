@@ -36,7 +36,7 @@
 }
 
 /************************************************************************************/
-extern "C" { uint64_t masking(uint64_t *ptr, unsigned length); }
+extern "C" { uint64_t masking(uint64_t *ptr, unsigned length, unsigned table_offset); }
 extern "C" { uint64_t testing(uint64_t *ptr, unsigned length); }
 
 /************************************************************************************/

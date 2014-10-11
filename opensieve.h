@@ -61,7 +61,7 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
 /**
  * TODO: docu
  */
-void bitsieve(uint64_t table[], unsigned length, int table_offset);
+void bitsieve(uint64_t table[], unsigned length, unsigned table_offset);
 
 }
 

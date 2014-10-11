@@ -1,4 +1,5 @@
 CXXFLAGS += -g -W -Wall -Werror -m64 -march=core2 -O3 -pipe 
+AS=$(CXX) -c $(CXXFLAGS)
 
 OBJS=tests.o opensieve.o arithmetic.o
 SRCS=$(wildcard *.cc)

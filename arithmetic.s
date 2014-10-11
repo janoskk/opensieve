@@ -1,4 +1,6 @@
 .text
+# uint64_t masking(uint64_t *ptr, unsigned length, unsigned table_offset);
+#                            %rdi          %rsi             %rdx
 .globl _masking
 _masking:
 
@@ -19,9 +21,134 @@ _masking:
 		movq    	$0x800040002000100, %r14	## mask of 17
 		movq    	$0x800010000200, %r15		## mask of 19
 
+		subq		$4, %rsp					## allocate one lword
+		movl		%edx, (%rsp)				## copy the table_offset to the stack
+
+# skipping for 3
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$3, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 3
+		testl		%edx, %edx
+		je			masking_L3
+masking_L2:
+		movq    	%rbx, %rax
+		shrq		$61, %rax
+		shrdq		$1, %rax, %rbx
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L2
+masking_L3:
+
+# skipping for 5
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$5, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 5
+		testl		%edx, %edx
+		je			masking_L5
+masking_L4:
+		movq    	%r8, %rax
+		shlq		$59, %rax
+		shldq		$1, %rax, %r8
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L4
+masking_L5:
+
+# skipping for 7
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$7, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 7
+		testl		%edx, %edx
+		je			masking_L7
+masking_L6:
+		movq    	%r9, %rax
+		shrq		$57, %rax
+		shrdq		$1, %rax, %r9
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L6
+masking_L7:
+
+# skipping for 11
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$11, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 11
+		testl		%edx, %edx
+		je			masking_L9
+masking_L8:
+		movq    	%r10, %rax
+		shlq		$53, %rax
+		shldq		$2, %rax, %r10
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L8
+masking_L9:
+
+# skipping for 13
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$13, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 13
+		testl		%edx, %edx
+		je			masking_L11
+masking_L10:
+		movq    	%r13, %rax
+		shlq		$51, %rax
+		shldq		$1, %rax, %r13
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L10
+masking_L11:
+
+# skipping for 17
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$17, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 17
+		testl		%edx, %edx
+		je			masking_L13
+masking_L12:
+		movq    	%r14, %rax
+		shlq		$47, %rax
+		shldq		$4, %rax, %r14
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L12
+masking_L13:
+
+# skipping for 19
+		movl		(%rsp), %eax				## prepare edx:eax for the division
+		movl		$19, %ecx
+		xorl		%edx, %edx
+		divl		%ecx						## %rdx = table_offset % 19
+		testl		%edx, %edx
+		je			masking_L15
+masking_L14:
+		movq    	%r15, %rax
+		shrq		$45, %rax
+		shrdq		$7, %rax, %r15
+
+		decl		%edx
+		testl		%edx, %edx
+		jne			masking_L14
+masking_L15:
+
+		movl		(%rsp), %edx				## saving back the table_offset, maybe needed later
+		addq		$4, %rsp					## free
+
 		# last elem of the list
 		shlq		$3, %rsi
-		addq		%rdi, %rsi			## %rsi = 8 * %rsi + %rdi
+		addq		%rdi, %rsi					## %rsi = 8 * %rsi + %rdi
 
 		xor			%rbp, %rbp 					## accumulator of the masks
 		orq			%rbx, %rbp
@@ -34,9 +161,11 @@ _masking:
 
 		movq		%rbp, (%rdi)
 
+
 		# stepping to the next item of the array
 		addq		$8, %rdi
 
+# start the masking
 masking_L1:
 		xor			%rbp, %rbp 					## accumulator of the masks
 
@@ -82,7 +211,7 @@ masking_L1:
 		shrdq		$7, %rax, %r15
 		orq			%r15, %rbp
 
-		movq		%rbp, (%rdi)
+ 		movq		%rbp, (%rdi)
 
 		# stepping to the next item of the array
 		addq		$8, %rdi
@@ -91,7 +220,7 @@ masking_L1:
 
 
 
-
+		# exiting
 		popq		%r15
 		popq		%r14
 		popq		%r13

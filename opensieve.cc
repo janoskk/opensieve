@@ -34,6 +34,7 @@
 #define OPEN_SIEVE_VERSION 2
 #define SEGMENTED_SIEVE_WITH_MASKING 1
 #define SEGMENTED_SIEVE_VERSION 1
+#define USE_ASM 1
 
 namespace opensieve
 {
@@ -88,12 +89,6 @@ void bitsieve(uint64_t table[], unsigned length)
         uint64_t acc = 0; // !!
         uint64_t c = 0;
 
-        /*
-         * TODO: maybe the masks can be improved like this:
-         * tmp = a_17 >> (17-4);
-         * a_17 = shld a_17, tmp, 4
-         * */
-
         MASK_R(acc, c, 3, a_3, 1);
         MASK_L(acc, c, 5, a_5, 1);
         MASK_R(acc, c, 7, a_7, 1);
@@ -117,7 +112,12 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
     //    printf("sqrt_limit = %" PRIu64 "u\n", sqrt_limit);
     //    printf("table_size = %" PRIu64 "u\n", table_size);
 
+#if USE_ASM == 1
+    masking(*table, table_size, 0);
+#else
     bitsieve(*table, table_size);
+#endif
+
     (*table)[0] &= 0xffffffffffffffff ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
 
     for (uint64_t i = 23; i <= sqrt_limit; i += 2)
@@ -270,7 +270,7 @@ static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg, ui
 }
 
 /************************************************************************************/
-void bitsieve(uint64_t table[], unsigned length, int table_offset)
+void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
 {
     uint64_t a_3 = 0x2492492492492492;
     uint64_t a_5 = 0x4210842108421084;
@@ -283,32 +283,20 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
     register uint64_t acc = 0; // !!
     register uint64_t c = 0;
 
-    for (int i = 0; i < table_offset % 3; i++)
+    for (unsigned i = 0; i < table_offset % 3; i++)
         MASK_R(acc, c, 3, a_3, 1);
-    for (int i = 0; i < table_offset % 5; i++)
+    for (unsigned i = 0; i < table_offset % 5; i++)
         MASK_L(acc, c, 5, a_5, 1);
-    for (int i = 0; i < table_offset % 7; i++)
+    for (unsigned i = 0; i < table_offset % 7; i++)
         MASK_R(acc, c, 7, a_7, 1);
-    for (int i = 0; i < table_offset % 11; i++)
+    for (unsigned i = 0; i < table_offset % 11; i++)
         MASK_L(acc, c, 11, a_11, 2);
-    for (int i = 0; i < table_offset % 13; i++)
+    for (unsigned i = 0; i < table_offset % 13; i++)
         MASK_L(acc, c, 13, a_13, 1);
-    for (int i = 0; i < table_offset % 17; i++)
+    for (unsigned i = 0; i < table_offset % 17; i++)
         MASK_L(acc, c, 17, a_17, 4);
-    for (int i = 0; i < table_offset % 19; i++)
+    for (unsigned i = 0; i < table_offset % 19; i++)
         MASK_R(acc, c, 19, a_19, 7);
-
-#define DEBUG_BITSIEVE 0
-#if DEBUG_BITSIEVE
-    printf("BEFORE THE WORK of offset %u\n", table_offset);
-    printf("a_3:\t %llx\n", a_3);
-    printf("a_5:\t %llx\n", a_5);
-    printf("a_7:\t %llx\n", a_7);
-    printf("a_11:\t %llx\n", a_11);
-    printf("a_13:\t %llx\n", a_13);
-    printf("a_17:\t %llx\n", a_17);
-    printf("a_19:\t %llx\n", a_19);
-#endif
 
     uint64_t b = a_3;
     b |= a_5;
@@ -334,28 +322,6 @@ void bitsieve(uint64_t table[], unsigned length, int table_offset)
 
         table[i] = acc;
     }
-#if DEBUG_BITSIEVE
-    uint64_t acc = 0; // !!
-    uint64_t c = 0;
-
-    MASK_R(acc, c, 3, a_3, 1);
-    MASK_L(acc, c, 5, a_5, 1);
-    MASK_R(acc, c, 7, a_7, 1);
-    MASK_L(acc, c, 11, a_11, 2);
-    MASK_L(acc, c, 13, a_13, 1);
-    MASK_L(acc, c, 17, a_17, 4);
-    MASK_R(acc, c, 19, a_19, 7);
-
-    printf("AFTER THE WORK of offset %u (the next before should be the same as that)\n",
-            table_offset);
-    printf("a_3:\t %llx\n", a_3);
-    printf("a_5:\t %llx\n", a_5);
-    printf("a_7:\t %llx\n", a_7);
-    printf("a_11:\t %llx\n", a_11);
-    printf("a_13:\t %llx\n", a_13);
-    printf("a_17:\t %llx\n", a_17);
-    printf("a_19:\t %llx\n", a_19);
-#endif
 }
 
 /************************************************************************************/
@@ -375,7 +341,6 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
     uint64_t segment_no = first_segment;
     while (n < last)
     {
-        memset(segment, 0x0, (SEGMENT_SIZE >> 7) * sizeof(uint64_t));
         uint64_t segment_first = segment_no * SEGMENT_SIZE + 1;
         uint64_t segment_last = segment_no * SEGMENT_SIZE + SEGMENT_SIZE;
         uint64_t seg = 0;
@@ -383,13 +348,18 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
 #if SEGMENTED_SIEVE_WITH_MASKING
         uint64_t prime = 19;
         uint64_t pos = 512;
+#if USE_ASM == 1
+        masking(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
+#else
         bitsieve(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
+#endif
         if (segment_no == 0)
         {
             segment[0] &= 0xffffffffffffffff ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
         }
         while ((diff = get_diff(small_primes, small_primes_size, seg, pos)) > 0)
 #else
+        memset(segment, 0x0, (SEGMENT_SIZE >> 7) * sizeof(uint64_t));
         uint64_t prime = 1;
         uint64_t pos = 1;
         while ((diff = get_diff(small_primes, small_primes_size, seg, pos)) > 0)
