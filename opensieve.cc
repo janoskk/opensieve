@@ -89,9 +89,9 @@ void bitsieve(uint64_t table[], unsigned length)
         uint64_t acc = 0; // !!
         uint64_t c = 0;
 
-        MASK_R(acc, c, 3, a_3, 1);
+        MASK_L(acc, c, 3, a_3, 2);
         MASK_L(acc, c, 5, a_5, 1);
-        MASK_R(acc, c, 7, a_7, 1);
+        MASK_L(acc, c, 7, a_7, 6);
         MASK_L(acc, c, 11, a_11, 2);
         MASK_L(acc, c, 13, a_13, 1);
         MASK_L(acc, c, 17, a_17, 4);
@@ -272,10 +272,8 @@ static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg, ui
 /************************************************************************************/
 void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
 {
-    uint64_t a_3 = 0x2492492492492492;
-    uint64_t a_5 = 0x4210842108421084;
-    uint64_t a_7 = 0x810204081020408;
-    uint64_t a_11 = 0x1002004008010020;
+    uint64_t a_3_11 = 0x2492492492492492 | 0x1002004008010020;
+    uint64_t a_5_7 = 0x4210842108421084 | 0x810204081020408;
     uint64_t a_13 = 0x400200100080040;
     uint64_t a_17 = 0x800040002000100;
     uint64_t a_19 = 0x800010000200;
@@ -283,14 +281,11 @@ void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
     register uint64_t acc = 0; // !!
     register uint64_t c = 0;
 
-    for (unsigned i = 0; i < table_offset % 3; i++)
-        MASK_R(acc, c, 3, a_3, 1);
-    for (unsigned i = 0; i < table_offset % 5; i++)
-        MASK_L(acc, c, 5, a_5, 1);
-    for (unsigned i = 0; i < table_offset % 7; i++)
-        MASK_R(acc, c, 7, a_7, 1);
-    for (unsigned i = 0; i < table_offset % 11; i++)
-        MASK_L(acc, c, 11, a_11, 2);
+
+    for (unsigned i = 0; i < table_offset % 33; i++)
+        MASK_L(acc, c, 33, a_3_11, 2);
+    for (unsigned i = 0; i < table_offset % 35; i++)
+        MASK_L(acc, c, 35, a_5_7, 6);
     for (unsigned i = 0; i < table_offset % 13; i++)
         MASK_L(acc, c, 13, a_13, 1);
     for (unsigned i = 0; i < table_offset % 17; i++)
@@ -298,10 +293,8 @@ void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
     for (unsigned i = 0; i < table_offset % 19; i++)
         MASK_R(acc, c, 19, a_19, 7);
 
-    uint64_t b = a_3;
-    b |= a_5;
-    b |= a_7;
-    b |= a_11;
+    uint64_t b = a_3_11;
+    b |= a_5_7;
     b |= a_13;
     b |= a_17;
     b |= a_19;
@@ -312,10 +305,8 @@ void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
         uint64_t acc = 0; // !!
         uint64_t c = 0;
 
-        MASK_R(acc, c, 3, a_3, 1);
-        MASK_L(acc, c, 5, a_5, 1);
-        MASK_R(acc, c, 7, a_7, 1);
-        MASK_L(acc, c, 11, a_11, 2);
+        MASK_L(acc, c, 33, a_3_11, 2);
+        MASK_L(acc, c, 35, a_5_7, 6);
         MASK_L(acc, c, 13, a_13, 1);
         MASK_L(acc, c, 17, a_17, 4);
         MASK_R(acc, c, 19, a_19, 7);

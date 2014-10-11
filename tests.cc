@@ -103,16 +103,23 @@ TEST assembly_test()
 /************************************************************************************/
 TEST masking_test()
 {
-#define MASKING_TEST_LENGTH 1024
+#define MASKING_TEST_LENGTH 4096
     uint64_t arr1[MASKING_TEST_LENGTH];
-    masking(arr1, MASKING_TEST_LENGTH, 0);
-
     uint64_t arr2[MASKING_TEST_LENGTH];
-    opensieve::bitsieve(arr2, MASKING_TEST_LENGTH, 0);
 
-    for (unsigned i = 0; i < MASKING_TEST_LENGTH; i++)
-        ASSERT_EQ(arr1[i], arr2[i])
-        ;
+    for (unsigned j = 0; j < 10000; j++)
+    {
+        masking(arr1, MASKING_TEST_LENGTH, j);
+        opensieve::bitsieve(arr2, MASKING_TEST_LENGTH, j);
+
+        for (unsigned i = 0; i < MASKING_TEST_LENGTH; i++) {
+            if (arr1[i] != arr2[i]) {
+                printf("i=%u arr1[i]=%p arr2[i]=%p\n", i, (void*)(arr1[i]), (void*)(arr2[i]));
+            }
+            ASSERT_EQ(arr1[i], arr2[i])
+            ;
+        }
+    }
 
     uint64_t arr3[10];
     for (unsigned i = 0; i < 10; i++)

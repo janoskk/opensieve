@@ -12,10 +12,9 @@ _masking:
 		pushq		%r14
 		pushq		%r15
 
-		movq    	$0x2492492492492492, %rbx	## mask of 3
-		movq    	$0x4210842108421084, %r8	## mask of 5
-		movq    	$0x810204081020408, %r9		## mask of 7
-		movq    	$0x1002004008010020, %r10	## mask of 11
+		movq    	$0x349249649a4924b2, %rbx	## mask of 3 and 11
+		movq    	$0x4a10a4618942148c, %r8	## mask of 5 and 7
+		# %r9 and %r10 is free now!
 		movq    	$0x400200100080040, %r13	## mask of 13
 		movq    	$0x800040002000100, %r14	## mask of 17
 		movq    	$0x800010000200, %r15		## mask of 19
@@ -26,73 +25,41 @@ _masking:
 		subq		$4, %rsp					## allocate one lword
 		movl		%edx, (%rsp)				## copy the table_offset to the stack
 
-# skipping for 3
+# skipping for 3 and 11
 		movl		(%rsp), %eax				## prepare edx:eax for the division
-		movl		$3, %ecx
+		movl		$33, %ecx
 		xorl		%edx, %edx
-		divl		%ecx						## %rdx = table_offset % 3
+		divl		%ecx						## %rdx = table_offset % 33
 		testl		%edx, %edx
 		je			masking_L3
 masking_L2:
-		movq    	%rbx, %rax
-		shrq		$61, %rax
-		shrdq		$1, %rax, %rbx
+		shlq		$2, %rbx
+		movq		%rbx, %rax
+		shrq		$33, %rax
+		orq			%rax, %rbx
 
 		decl		%edx
 		testl		%edx, %edx
 		jne			masking_L2
 masking_L3:
 
-# skipping for 5
+# skipping for 5 and 7
 		movl		(%rsp), %eax				## prepare edx:eax for the division
-		movl		$5, %ecx
+		movl		$35, %ecx
 		xorl		%edx, %edx
 		divl		%ecx						## %rdx = table_offset % 5
 		testl		%edx, %edx
 		je			masking_L5
 masking_L4:
-		movq    	%r8, %rax
-		shlq		$59, %rax
-		shldq		$1, %rax, %r8
+		shlq		$6, %r8
+		movq		%r8, %rax
+		shrq		$35, %rax
+		orq			%rax, %r8
 
 		decl		%edx
 		testl		%edx, %edx
 		jne			masking_L4
 masking_L5:
-
-# skipping for 7
-		movl		(%rsp), %eax				## prepare edx:eax for the division
-		movl		$7, %ecx
-		xorl		%edx, %edx
-		divl		%ecx						## %rdx = table_offset % 7
-		testl		%edx, %edx
-		je			masking_L7
-masking_L6:
-		movq    	%r9, %rax
-		shrq		$57, %rax
-		shrdq		$1, %rax, %r9
-
-		decl		%edx
-		testl		%edx, %edx
-		jne			masking_L6
-masking_L7:
-
-# skipping for 11
-		movl		(%rsp), %eax				## prepare edx:eax for the division
-		movl		$11, %ecx
-		xorl		%edx, %edx
-		divl		%ecx						## %rdx = table_offset % 11
-		testl		%edx, %edx
-		je			masking_L9
-masking_L8:
-		movq    	%r10, %rax
-		shlq		$53, %rax
-		shldq		$2, %rax, %r10
-
-		decl		%edx
-		testl		%edx, %edx
-		jne			masking_L8
-masking_L9:
 
 # skipping for 13
 		movl		(%rsp), %eax				## prepare edx:eax for the division
@@ -156,8 +123,6 @@ masking_L16:									## after the skip
 		xor			%rbp, %rbp 					## accumulator of the masks
 		orq			%rbx, %rbp
 		orq			%r8, %rbp
-		orq			%r9, %rbp
-		orq			%r10, %rbp
 		orq			%r13, %rbp
 		orq			%r14, %rbp
 		orq			%r15, %rbp
@@ -172,46 +137,39 @@ masking_L16:									## after the skip
 masking_L1:
 		xor			%rbp, %rbp 					## accumulator of the masks
 
-# for 3
-		movq    	%rbx, %rax
-		shrq		$61, %rax
-		shrdq		$1, %rax, %rbx
+# for 3 and 11
+		shlq		$2, %rbx
+		movq		%rbx, %rax
+		shrq		$33, %rax
+		orq			%rax, %rbx
 		orq			%rbx, %rbp
 
-# for 5
-		movq    	%r8, %rax
-		shlq		$59, %rax
-		shldq		$1, %rax, %r8
+# for 5 and 7
+		shlq		$6, %r8
+		movq		%r8, %rax
+		shrq		$35, %rax
+		orq			%rax, %r8
 		orq			%r8, %rbp
 
-# for 7
-		movq    	%r9, %rax
-		shrq		$57, %rax
-		shrdq		$1, %rax, %r9
-		orq			%r9, %rbp
-
-# for 11
-		movq    	%r10, %rax
-		shlq		$53, %rax
-		shldq		$2, %rax, %r10
-		orq			%r10, %rbp
-
 # for 13
-		movq    	%r13, %rax
-		shlq		$51, %rax
-		shldq		$1, %rax, %r13
+		shlq		$1, %r13
+		movq		%r13, %rax
+		shrq		$13, %rax
+		orq			%rax, %r13
 		orq			%r13, %rbp
 
 # for 17
-		movq    	%r14, %rax
-		shlq		$47, %rax
-		shldq		$4, %rax, %r14
+		shlq		$4, %r14
+		movq		%r14, %rax
+		shrq		$17, %rax
+		orq			%rax, %r14
 		orq			%r14, %rbp
 
 # for 19
-		movq    	%r15, %rax
-		shrq		$45, %rax
-		shrdq		$7, %rax, %r15
+		shrq		$7, %r15
+		movq		%r15, %rax
+		shlq		$19, %rax
+		orq			%rax, %r15
 		orq			%r15, %rbp
 
  		movq		%rbp, (%rdi)
