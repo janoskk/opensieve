@@ -3,7 +3,6 @@
 #                            %rdi          %rsi             %rdx
 .globl _masking
 _masking:
-
 		pushq		%rbp
 		pushq		%rbx
 		pushq		%r8
@@ -20,6 +19,9 @@ _masking:
 		movq    	$0x400200100080040, %r13	## mask of 13
 		movq    	$0x800040002000100, %r14	## mask of 17
 		movq    	$0x800010000200, %r15		## mask of 19
+
+		testl		%edx, %edx					## don't skip at all if table_offset == 0
+		je			masking_L16
 
 		subq		$4, %rsp					## allocate one lword
 		movl		%edx, (%rsp)				## copy the table_offset to the stack
@@ -146,6 +148,7 @@ masking_L15:
 		movl		(%rsp), %edx				## saving back the table_offset, maybe needed later
 		addq		$4, %rsp					## free
 
+masking_L16:									## after the skip
 		# last elem of the list
 		shlq		$3, %rsi
 		addq		%rdi, %rsi					## %rsi = 8 * %rsi + %rdi
