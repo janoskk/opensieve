@@ -21,14 +21,23 @@ namespace opensieve
 {
 /**
  * Process function that will be called for each prime after the interval is sieved.
+ * Mainly for internal use.
  *
  * prime: current prime number to be processed
  */
 typedef void SIEVE_PROCESS_FUNC(uint64_t prime);
 
 /**
- * Sieves out the interval [0..limit] into the allocated table.
+ * TODO: docu
+ * Mainly for internal use.
+ */
+void c_masking(uint64_t table[], unsigned length, unsigned table_offset);
+
+/**
+ * Allocates and sieves out the interval [0..limit] into the table.
  * The caller has to free the allocated memory!
+ *
+ * Mainly for internal use.
  *
  * limit: upper bound of the sieved numbers
  * table: sieve table what is a bit table representing the odd numbers
@@ -50,18 +59,25 @@ uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
         unsigned current_segment = 0);
 
 /**
- * Sieves out no_of_segments segments starting with the first_segment.
+ * Sieves out no_of_segments segments starting with the first_segment. When the current segment has
+ * sieved, the proces function will be called.
+ *
+ * Mainly for internal use.
  *
  * first_segment: start the sieve with that segment
  * no_of_segments: that many segments will be sieved
  * process_for_primes: process function
  */
-void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes);
+void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes);
 
 /**
- * TODO: docu
+ * Sieves out the [a*2^k..b*2^k] interval where a*2^k <= first_number < last_number <= b*2^k.
+ *
+ * first_number: first number of the inner interval
+ * last_number: last number of the inner interval
+ * process_for_primes: process function
  */
-void bitsieve(uint64_t table[], unsigned length, unsigned table_offset);
+void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *process_for_primes);
 
 }
 

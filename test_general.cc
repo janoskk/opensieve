@@ -111,12 +111,14 @@ TEST masking_test()
 
     for (unsigned j = 0; j < 10000; j++)
     {
-        masking(arr1, MASKING_TEST_LENGTH_1, j);
-        opensieve::bitsieve(arr2, MASKING_TEST_LENGTH_1, j);
+        asm_masking(arr1, MASKING_TEST_LENGTH_1, j);
+        opensieve::c_masking(arr2, MASKING_TEST_LENGTH_1, j);
 
-        for (unsigned i = 0; i < MASKING_TEST_LENGTH_1; i++) {
-            if (arr1[i] != arr2[i]) {
-                printf("i=%u arr1[i]=%p arr2[i]=%p\n", i, (void*)(arr1[i]), (void*)(arr2[i]));
+        for (unsigned i = 0; i < MASKING_TEST_LENGTH_1; i++)
+        {
+            if (arr1[i] != arr2[i])
+            {
+                printf("i=%u arr1[i]=%p arr2[i]=%p\n", i, (void*) (arr1[i]), (void*) (arr2[i]));
             }
             ASSERT_EQ(arr1[i], arr2[i])
             ;
@@ -131,28 +133,6 @@ TEST masking_test()
 
     PASS()
     ;
-}
-
-/************************************************************************************/
-TEST c_masking_test()
-{
-    uint64_t arr[MASKING_TEST_LENGTH_2];
-    for (uint64_t i = 0; i < 10000000; i++)
-    {
-        opensieve::bitsieve(arr, MASKING_TEST_LENGTH_2, i * MASKING_TEST_LENGTH_2);
-    }
-    PASS();
-}
-
-/************************************************************************************/
-TEST asm_masking_test()
-{
-    uint64_t arr[MASKING_TEST_LENGTH_2];
-    for (uint64_t i = 0; i < 10000000; i++)
-    {
-        masking(arr, MASKING_TEST_LENGTH_2, i * MASKING_TEST_LENGTH_2);
-    }
-    PASS();
 }
 
 /************************************************************************************/
@@ -266,7 +246,7 @@ TEST file_sieve_test()
     ASSERTm("File " TEST_FILE_1 " cannot be open!", global_file != NULL)
     ;
 
-    sieve(0, 100, write_prime);
+    sieve_segments(0, 100, write_prime);
 
     fclose(global_file);
     PASS()
@@ -278,8 +258,6 @@ SUITE(general_suite)
 {
     RUN_TEST(assembly_test);
     RUN_TEST(masking_test);
-    RUN_TEST(c_masking_test);
-    RUN_TEST(asm_masking_test);
 }
 
 /************************************************************************************/
@@ -294,14 +272,12 @@ int devel_tests(void)
 {
 #if PERFORMANCE_TEST
 //    sieve(0, 500, print_prime);
-    sieve(0, 3000, print_prime);
+    sieve_segments(0, 3000, print_prime);
 #else
-    sieve(0, 100, print_prime);
+    sieve_segments(0, 3000, print_prime);
 #endif
     return 0;
 }
-
-
 
 /************************************************************************************/
 TEST devel_tests_case()

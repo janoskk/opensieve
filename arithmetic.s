@@ -1,9 +1,26 @@
+#
+#   Copyright 2014 by Janos Kasza
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
 .text
-# uint64_t masking(uint64_t *ptr, unsigned length, unsigned table_offset);
-#                            %rdi          %rsi             %edx
+# Usage:
+# uint64_t asm_masking(uint64_t *ptr, unsigned length, unsigned table_offset);
+#                                %rdi          %rsi             %edx
 .align 4,0x90
-.globl _masking
-_masking:
+.globl _asm_masking
+_asm_masking:
 		# %r10 and %r12 are still free
 		pushq		%rbp
 		pushq		%rbx
@@ -174,7 +191,7 @@ masking_L1:
 		orq			%rax, %r15
 		orq			%r15, %rbp
 
-# setting the accumulated mask
+# setting ptr[i] to the accumulated mask
  		movq		%rbp, (%rdi)
 
 		# stepping to the next item of the array

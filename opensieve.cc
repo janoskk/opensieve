@@ -112,9 +112,9 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
     //    printf("table_size = %" PRIu64 "u\n", table_size);
 
 #if USE_ASM == 1
-    masking(*table, table_size, 0);
+    asm_masking(*table, table_size, 0);
 #else
-    bitsieve(*table, table_size);
+    c_masking(*table, table_size);
 #endif
 
     (*table)[0] &= 0xffffffffffffffff ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
@@ -269,7 +269,7 @@ static uint64_t get_diff(uint64_t *table, uint64_t table_size, uint64_t &seg, ui
 }
 
 /************************************************************************************/
-void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
+void c_masking(uint64_t table[], unsigned length, unsigned table_offset)
 {
     uint64_t a_3_11 = 0x2492492492492492 | 0x1002004008010020;
     uint64_t a_5_7 = 0x4210842108421084 | 0x810204081020408;
@@ -279,7 +279,6 @@ void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
 
     register uint64_t acc = 0; // !!
     register uint64_t c = 0;
-
 
     for (unsigned i = 0; i < table_offset % 33; i++)
         MASK_L(acc, c, 33, a_3_11, 2);
@@ -315,7 +314,7 @@ void bitsieve(uint64_t table[], unsigned length, unsigned table_offset)
 }
 
 /************************************************************************************/
-void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes)
+void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes)
 {
     uint64_t first = first_segment * SEGMENT_SIZE + 1;
     uint64_t last = (first_segment + no_of_segments) * SEGMENT_SIZE;
@@ -339,9 +338,9 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
         uint64_t prime = 19;
         uint64_t pos = 512;
 #if USE_ASM == 1
-        masking(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
+        asm_masking(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
 #else
-        bitsieve(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
+        c_masking(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
 #endif
         if (segment_no == 0)
         {
@@ -428,12 +427,13 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
     free(small_primes);
 }
 
-//void hmm(uint64_t *ptr, unsigned length)
-//{
-//    for (unsigned i = 0; i < length; i++) {
-//        ptr[i] = i;
-//    }
-//}
+/************************************************************************************/
+void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *process_for_primes)
+{
+    uint64_t first_segment = first_number / (SEGMENT_SIZE<<1);
+    int no_of_segments = last_number / (SEGMENT_SIZE<<1) - first_segment + 1;
+    sieve_segments(first_segment, no_of_segments, process_for_primes);
+}
 
 }
 

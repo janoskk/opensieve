@@ -17,6 +17,10 @@
 #ifndef ARITHMETIC_H_
 #define ARITHMETIC_H_
 
+/************************************************************************************/
+/**
+ * Shift the mask to right
+ */
 #define MASK_R(acc, c, num, num_var, count)   \
 {                                             \
         num_var >>= count;                    \
@@ -26,6 +30,10 @@
         acc |= num_var;                       \
 }
 
+/************************************************************************************/
+/**
+ * Shift the mask to left
+ */
 #define MASK_L(acc, c, num, num_var, count)   \
 {                                             \
         num_var <<= count;                    \
@@ -36,11 +44,18 @@
 }
 
 /************************************************************************************/
-extern "C" { uint64_t masking(uint64_t *ptr, unsigned length, unsigned table_offset); }
+/**
+ * Assembly function for the masking
+ */
+extern "C" { uint64_t asm_masking(uint64_t *ptr, unsigned length, unsigned table_offset); }
+
+/**
+ * Assembly function for testing during the development
+ */
 extern "C" { uint64_t testing(uint64_t *ptr, unsigned length); }
 
 /************************************************************************************/
-/*
+/**
  * Replacement for num >> bits computation what is limited to shift maximum 31 bits
  */
 inline uint64_t jkk_asm_shl(uint64_t num, int bits)
@@ -53,7 +68,7 @@ inline uint64_t jkk_asm_shl(uint64_t num, int bits)
 }
 
 /************************************************************************************/
-/*
+/**
  * Replacement for num << bits computation what is limited to shift maximum 31 bits
  */
 inline uint64_t jkk_asm_shr(uint64_t num, int bits)
@@ -66,7 +81,7 @@ inline uint64_t jkk_asm_shr(uint64_t num, int bits)
 }
 
 /************************************************************************************/
-/*
+/**
  * Rotate to left instruction
  */
 inline uint64_t jkk_asm_rol(uint64_t num, int bits)
@@ -79,7 +94,7 @@ inline uint64_t jkk_asm_rol(uint64_t num, int bits)
 }
 
 /************************************************************************************/
-/*
+/**
  * Rotate to right instruction
  */
 inline uint64_t jkk_asm_ror(uint64_t num, int bits)
@@ -92,6 +107,9 @@ inline uint64_t jkk_asm_ror(uint64_t num, int bits)
 }
 
 /************************************************************************************/
+/**
+ * Inline function for the BSF instruction
+ */
 inline uint64_t jkk_asm_bsf(uint64_t num)
 {
     uint64_t ret = 0;
