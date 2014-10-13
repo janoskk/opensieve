@@ -35,6 +35,8 @@ using namespace opensieve;
 #define PATTERN_SEGMENT_SIZE 1024
 
 #define PERFORMANCE_TEST 1
+#define MASKING_TEST_LENGTH_1 4096
+#define MASKING_TEST_LENGTH_2 (1<<13)
 
 uint64_t global_sum = 0;
 uint64_t global_cnt = 0;
@@ -103,16 +105,16 @@ TEST assembly_test()
 /************************************************************************************/
 TEST masking_test()
 {
-#define MASKING_TEST_LENGTH 4096
-    uint64_t arr1[MASKING_TEST_LENGTH];
-    uint64_t arr2[MASKING_TEST_LENGTH];
+#define MASKING_TEST_LENGTH_1 4096
+    uint64_t arr1[MASKING_TEST_LENGTH_1];
+    uint64_t arr2[MASKING_TEST_LENGTH_1];
 
     for (unsigned j = 0; j < 10000; j++)
     {
-        masking(arr1, MASKING_TEST_LENGTH, j);
-        opensieve::bitsieve(arr2, MASKING_TEST_LENGTH, j);
+        masking(arr1, MASKING_TEST_LENGTH_1, j);
+        opensieve::bitsieve(arr2, MASKING_TEST_LENGTH_1, j);
 
-        for (unsigned i = 0; i < MASKING_TEST_LENGTH; i++) {
+        for (unsigned i = 0; i < MASKING_TEST_LENGTH_1; i++) {
             if (arr1[i] != arr2[i]) {
                 printf("i=%u arr1[i]=%p arr2[i]=%p\n", i, (void*)(arr1[i]), (void*)(arr2[i]));
             }
@@ -129,6 +131,28 @@ TEST masking_test()
 
     PASS()
     ;
+}
+
+/************************************************************************************/
+TEST c_masking_test()
+{
+    uint64_t arr[MASKING_TEST_LENGTH_2];
+    for (uint64_t i = 0; i < 10000000; i++)
+    {
+        opensieve::bitsieve(arr, MASKING_TEST_LENGTH_2, i * MASKING_TEST_LENGTH_2);
+    }
+    PASS();
+}
+
+/************************************************************************************/
+TEST asm_masking_test()
+{
+    uint64_t arr[MASKING_TEST_LENGTH_2];
+    for (uint64_t i = 0; i < 10000000; i++)
+    {
+        masking(arr, MASKING_TEST_LENGTH_2, i * MASKING_TEST_LENGTH_2);
+    }
+    PASS();
 }
 
 /************************************************************************************/
@@ -254,6 +278,8 @@ SUITE(general_suite)
 {
     RUN_TEST(assembly_test);
     RUN_TEST(masking_test);
+    RUN_TEST(c_masking_test);
+    RUN_TEST(asm_masking_test);
 }
 
 /************************************************************************************/
@@ -274,6 +300,8 @@ int devel_tests(void)
 #endif
     return 0;
 }
+
+
 
 /************************************************************************************/
 TEST devel_tests_case()

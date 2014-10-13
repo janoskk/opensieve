@@ -430,7 +430,9 @@ void sieve(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *proces
 
 //void hmm(uint64_t *ptr, unsigned length)
 //{
-//
+//    for (unsigned i = 0; i < length; i++) {
+//        ptr[i] = i;
+//    }
 //}
 
 }
