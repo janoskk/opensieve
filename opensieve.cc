@@ -15,9 +15,10 @@
  */
 
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <stdlib.h>
 #include <math.h>
+#include <stdexcept>
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -28,12 +29,13 @@
 #ifndef SEGMENT_BITS
 #define SEGMENT_BITS 20
 #endif
-#define SEGMENT_SIZE (1<<SEGMENT_BITS)
+#define SEGMENT_SIZE (1ULL<<SEGMENT_BITS)
 
 #define OPEN_SIEVE_VERSION 2
 #define SEGMENTED_SIEVE_WITH_MASKING 1
 #define SEGMENTED_SIEVE_VERSION 1
 #define USE_ASM 1
+#define ROUND_SMALL_SIEVE_LIMIT 1
 
 namespace opensieve
 {
@@ -104,7 +106,29 @@ void bitsieve(uint64_t table[], unsigned length)
 void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
 {
     table_size = (((limit + 1) >> 1) + 63) >> 6;
-    *table = (uint64_t*) valloc(table_size * sizeof(uint64_t));
+
+#if ROUND_SMALL_SIEVE_LIMIT == 1
+    uint64_t table_size_for_alloc = table_size / (SEGMENT_SIZE >> 7) * ((SEGMENT_SIZE >> 7)) + (SEGMENT_SIZE >> 7);
+#else
+    uint64_t table_size_for_alloc = table_size;
+#endif
+
+    *table = (uint64_t*) valloc(table_size_for_alloc * sizeof(uint64_t));
+
+    if (!table)
+    {
+        throw new std::runtime_error("Unable to allocate memory!");
+    }
+
+    printf("Allocated %llu byte (%lluMB) memory.\n", (table_size * sizeof(uint64_t)),
+            (table_size * sizeof(uint64_t)) >> 20);
+    if (limit > 1ULL << 16)
+    {
+        printf("small sieve table is still too large\n");
+        // TODO: continue...
+        // sieve(0, limit, *table, table_size_for_alloc);
+    }
+
     const uint64_t sqrt_limit = sqrt((double) limit) + 1;
 
     //    printf("limit      = %" PRIu64 "u\n", limit);
@@ -430,8 +454,8 @@ void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUN
 /************************************************************************************/
 void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *process_for_primes)
 {
-    uint64_t first_segment = first_number / (SEGMENT_SIZE<<1);
-    int no_of_segments = last_number / (SEGMENT_SIZE<<1) - first_segment + 1;
+    uint64_t first_segment = first_number / (SEGMENT_SIZE << 1);
+    int no_of_segments = last_number / (SEGMENT_SIZE << 1) - first_segment + 1;
     sieve_segments(first_segment, no_of_segments, process_for_primes);
 }
 

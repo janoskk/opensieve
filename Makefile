@@ -6,7 +6,6 @@ SRCS=$(wildcard *.cc)
 BINS=test_general test_perf
 
 all: $(BINS)
-	./test_general
 
 test_general: $(SRCS) $(OBJS) test_general.o 
 	$(CXX) -o $@ $(LDFLAGS) $(OBJS) $@.o

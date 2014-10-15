@@ -7,5 +7,6 @@
 /tmp
 .project
 .cproject
-tests
+test_general
+test_perf
 .depend

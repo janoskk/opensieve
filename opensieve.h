@@ -34,8 +34,9 @@ typedef void SIEVE_PROCESS_FUNC(uint64_t prime);
 void c_masking(uint64_t table[], unsigned length, unsigned table_offset);
 
 /**
- * Allocates and sieves out the interval [0..limit] into the table.
- * The caller has to free the allocated memory!
+ * Allocates and sieves out the interval [0..limit] into the table. Note that
+ * 1) The caller has to free the allocated memory!
+ * 2) The allocated size might be greater than the necessary size [0..2^s] limit <= 2^s
  *
  * Mainly for internal use.
  *

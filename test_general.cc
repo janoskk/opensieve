@@ -125,12 +125,6 @@ TEST masking_test()
         }
     }
 
-    uint64_t arr3[10];
-    for (unsigned i = 0; i < 10; i++)
-        arr3[i] = i + 1;
-
-    printf("testing: %llu\n", testing(arr3, 10));
-
     PASS()
     ;
 }
@@ -272,7 +266,8 @@ int devel_tests(void)
 {
 #if PERFORMANCE_TEST
 //    sieve(0, 500, print_prime);
-    sieve_segments(0, 3000, print_prime);
+    uint64_t a = 1ULL<<20 * 1ULL<<20 * 1ULL<<20;
+    sieve(a, a+1, print_prime);
 #else
     sieve_segments(0, 3000, print_prime);
 #endif
