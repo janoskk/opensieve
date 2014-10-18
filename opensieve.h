@@ -69,7 +69,8 @@ uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table,
  * no_of_segments: that many segments will be sieved
  * process_for_primes: process function
  */
-void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes);
+void sieve_segments(uint64_t first_segment, uint64_t no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes,
+        uint64_t *table = 0);
 
 /**
  * Sieves out the [a*2^k..b*2^k] interval where a*2^k <= first_number < last_number <= b*2^k.

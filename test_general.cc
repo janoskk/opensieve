@@ -31,7 +31,8 @@
 
 using namespace opensieve;
 
-#define TEST_FILE_1 "test_results/test_1_os.txt"
+#define TEST_FILE_TEMPLATE "test_results/test_%d_os.txt"
+
 #define PATTERN_SEGMENT_SIZE 1024
 
 #define PERFORMANCE_TEST 1
@@ -56,6 +57,15 @@ static void print_prime(uint64_t prime)
 static void write_prime(uint64_t prime)
 {
     fprintf(global_file, "%" PRIu64 "\n", prime);
+}
+
+/************************************************************************************/
+static void hash_func_write(uint64_t prime)
+{
+    fprintf(global_file, "prime: %llu global_sum: %llu global_cnt: %llu\n", prime, global_sum, global_cnt);
+
+    global_sum += prime;
+    global_cnt++;
 }
 
 /************************************************************************************/
@@ -208,6 +218,10 @@ TEST simple_sieve_test()
 
     for (int i = 0; hash_results[i][0] != 0; i++)
     {
+        char filename[128];
+        sprintf(filename, TEST_FILE_TEMPLATE, 11 + i);
+        global_file = fopen(filename, "w");
+
         global_sum = 0;
         global_cnt = 0;
 
@@ -215,9 +229,10 @@ TEST simple_sieve_test()
         uint64_t table_size;
 
         sieve_small(hash_results[i][0], &table, table_size);
-        process_primes(hash_func, table, table_size, 0);
+        process_primes(hash_func_write, table, table_size, 0);
 
         free(table);
+        fclose(global_file);
 
         // printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n",
         // global_sum, global_cnt);
@@ -236,8 +251,10 @@ TEST simple_sieve_test()
 /************************************************************************************/
 TEST file_sieve_test()
 {
-    global_file = fopen(TEST_FILE_1, "w");
-    ASSERTm("File " TEST_FILE_1 " cannot be open!", global_file != NULL)
+    char filename[128];
+    sprintf(filename, TEST_FILE_TEMPLATE, 51);
+    global_file = fopen(filename, "w");
+    ASSERTm("File cannot be open in file_sieve_test!", global_file != NULL)
     ;
 
     sieve_segments(0, 100, write_prime);
@@ -264,13 +281,20 @@ SUITE(sieve_suite)
 /************************************************************************************/
 int devel_tests(void)
 {
-#if PERFORMANCE_TEST
-//    sieve(0, 500, print_prime);
-    uint64_t a = 1ULL<<20 * 1ULL<<20 * 1ULL<<20;
-    sieve(a, a+1, print_prime);
-#else
-    sieve_segments(0, 3000, print_prime);
-#endif
+    if (PERFORMANCE_TEST)
+    {
+        uint64_t a = 1ULL << 20 * 1ULL << 10;
+        global_cnt = 0;
+        global_sum = 0;
+
+        sieve(0, a, hash_func);
+
+        printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n", global_sum, global_cnt);
+    }
+    else
+    {
+        sieve_segments(0, 3000, print_prime);
+    }
     return 0;
 }
 

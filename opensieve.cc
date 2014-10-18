@@ -29,13 +29,35 @@
 #ifndef SEGMENT_BITS
 #define SEGMENT_BITS 20
 #endif
-#define SEGMENT_SIZE (1ULL<<SEGMENT_BITS)
 
+#ifndef SEGMENT_SIZE
+#define SEGMENT_SIZE (1ULL<<SEGMENT_BITS)
+#endif
+
+#ifndef OPEN_SIEVE_VERSION
 #define OPEN_SIEVE_VERSION 2
+#endif
+
+#ifndef SEGMENTED_SIEVE_WITH_MASKING
 #define SEGMENTED_SIEVE_WITH_MASKING 1
+#endif
+
+#ifndef SEGMENTED_SIEVE_VERSION
 #define SEGMENTED_SIEVE_VERSION 1
-#define USE_ASM 1
-#define ROUND_SMALL_SIEVE_LIMIT 1
+#endif
+
+#ifndef USE_ASM_VERSION_OF_MASKING
+#define USE_ASM_VERSION_OF_MASKING 1
+#endif
+
+#ifndef USE_RECURSIVE_SIEVE
+#define USE_RECURSIVE_SIEVE 1
+#endif
+
+#ifndef RECURSIVE_SIEVE_LIMIT
+#define RECURSIVE_SIEVE_LIMIT (1ULL << 16)
+#endif
+
 
 namespace opensieve
 {
@@ -57,10 +79,10 @@ char inv30[] =
 }
 
 /************************************************************************************/
-#define SIEVE_AT(x, buf) {                                           \
+#define SIEVE_AT(x, buf) {                                      \
 	seg = pos >> 6;                                             \
 	off = jkk_asm_shl(1ULL,  (pos & 0x3f));                     \
-	buf[seg] |= off;                                       \
+	buf[seg] |= off;                                            \
 	pos += pos30[x];                                            \
 	j++;                                                        \
 }
@@ -107,27 +129,27 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
 {
     table_size = (((limit + 1) >> 1) + 63) >> 6;
 
-#if ROUND_SMALL_SIEVE_LIMIT == 1
-    uint64_t table_size_for_alloc = table_size / (SEGMENT_SIZE >> 7) * ((SEGMENT_SIZE >> 7)) + (SEGMENT_SIZE >> 7);
-#else
-    uint64_t table_size_for_alloc = table_size;
-#endif
+    uint64_t no_of_segments = table_size / (SEGMENT_SIZE >> 7) + 1;
+    uint64_t table_size_for_alloc = no_of_segments * (SEGMENT_SIZE >> 7);
 
     *table = (uint64_t*) valloc(table_size_for_alloc * sizeof(uint64_t));
 
-    if (!table)
+    if (!*table)
     {
         throw new std::runtime_error("Unable to allocate memory!");
     }
 
     printf("Allocated %llu byte (%lluMB) memory.\n", (table_size * sizeof(uint64_t)),
             (table_size * sizeof(uint64_t)) >> 20);
-    if (limit > 1ULL << 16)
+
+#if USE_RECURSIVE_SIEVE == 1
+    if (limit > RECURSIVE_SIEVE_LIMIT)
     {
         printf("small sieve table is still too large\n");
-        // TODO: continue...
-        // sieve(0, limit, *table, table_size_for_alloc);
+        sieve_segments(0, no_of_segments, 0, *table);
+        return;
     }
+#endif
 
     const uint64_t sqrt_limit = sqrt((double) limit) + 1;
 
@@ -135,10 +157,10 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
     //    printf("sqrt_limit = %" PRIu64 "u\n", sqrt_limit);
     //    printf("table_size = %" PRIu64 "u\n", table_size);
 
-#if USE_ASM == 1
+#if USE_ASM_VERSION_OF_MASKING == 1
     asm_masking(*table, table_size, 0);
 #else
-    c_masking(*table, table_size);
+    c_masking(*table, table_size, 0);
 #endif
 
     (*table)[0] &= 0xffffffffffffffff ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
@@ -322,7 +344,7 @@ void c_masking(uint64_t table[], unsigned length, unsigned table_offset)
     b |= a_19;
     table[0] = b;
 
-    for (int i = 1; i < (int) length; i++)
+    for (unsigned i = 1; i < length; i++)
     {
         uint64_t acc = 0; // !!
         uint64_t c = 0;
@@ -338,9 +360,10 @@ void c_masking(uint64_t table[], unsigned length, unsigned table_offset)
 }
 
 /************************************************************************************/
-void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes)
+void sieve_segments(uint64_t first_segment, uint64_t no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes,
+        uint64_t *table)
 {
-    uint64_t first = first_segment * SEGMENT_SIZE + 1;
+    //uint64_t first = first_segment * SEGMENT_SIZE + 1;
     uint64_t last = (first_segment + no_of_segments) * SEGMENT_SIZE;
     uint64_t sqrt_of_last_elem = (int64_t) sqrt((double) last + SEGMENT_SIZE) + 2;
 
@@ -348,11 +371,17 @@ void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUN
     uint64_t small_primes_size;
     sieve_small(sqrt_of_last_elem, &small_primes, small_primes_size);
 
-    uint64_t segment[SEGMENT_SIZE >> 7];
+    uint64_t *segment;
+    if (table != 0)
+    {
+        segment = table;
+    }
+    else
+    {
+        segment = (uint64_t*) malloc((SEGMENT_SIZE >> 7) * sizeof(uint64_t));
+    }
 
-    uint64_t n = (first == 1) ? 3 : first;
-    uint64_t segment_no = first_segment;
-    while (n < last)
+    for (uint64_t segment_no = first_segment; segment_no < first_segment + no_of_segments; segment_no++)
     {
         uint64_t segment_first = segment_no * SEGMENT_SIZE + 1;
         uint64_t segment_last = segment_no * SEGMENT_SIZE + SEGMENT_SIZE;
@@ -361,7 +390,7 @@ void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUN
 #if SEGMENTED_SIEVE_WITH_MASKING
         uint64_t prime = 19;
         uint64_t pos = 512;
-#if USE_ASM == 1
+#if USE_ASM_VERSION_OF_MASKING == 1
         asm_masking(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
 #else
         c_masking(segment, SEGMENT_SIZE >> 7, (segment_no) * (SEGMENT_SIZE >> 7));
@@ -370,6 +399,7 @@ void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUN
         {
             segment[0] &= 0xffffffffffffffff ^ (2 | 4 | 8 | 32 | 64 | 256 | 512); // correcting 3, 5, 7, 11, 13, 17, 19
         }
+
         while ((diff = get_diff(small_primes, small_primes_size, seg, pos)) > 0)
 #else
         memset(segment, 0x0, (SEGMENT_SIZE >> 7) * sizeof(uint64_t));
@@ -443,9 +473,12 @@ void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUN
         }
 
         // n is the last sieving prime in that segment
-        n = process_primes(process_for_primes, segment, SEGMENT_SIZE >> 7, segment_no);
+        /* n = */process_primes(process_for_primes, segment, SEGMENT_SIZE >> 7, segment_no);
 
-        segment_no++;
+        if (table != 0)
+        {
+            segment += (SEGMENT_SIZE >> 7);
+        }
     }
 
     free(small_primes);
@@ -455,7 +488,7 @@ void sieve_segments(int64_t first_segment, int no_of_segments, SIEVE_PROCESS_FUN
 void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *process_for_primes)
 {
     uint64_t first_segment = first_number / (SEGMENT_SIZE << 1);
-    int no_of_segments = last_number / (SEGMENT_SIZE << 1) - first_segment + 1;
+    uint64_t no_of_segments = last_number / (SEGMENT_SIZE << 1) - first_segment + 1;
     sieve_segments(first_segment, no_of_segments, process_for_primes);
 }
 
