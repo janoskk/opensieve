@@ -17,6 +17,7 @@
 #ifndef ARITHMETIC_H_
 #define ARITHMETIC_H_
 
+
 /************************************************************************************/
 /**
  * Shift the mask to right

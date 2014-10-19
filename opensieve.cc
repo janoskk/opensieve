@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdexcept>
+#include <iostream>
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -57,7 +58,6 @@
 #ifndef RECURSIVE_SIEVE_LIMIT
 #define RECURSIVE_SIEVE_LIMIT (1ULL << 16)
 #endif
-
 
 namespace opensieve
 {
@@ -139,8 +139,8 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
         throw new std::runtime_error("Unable to allocate memory!");
     }
 
-    printf("Allocated %llu byte (%lluMB) memory.\n", (table_size * sizeof(uint64_t)),
-            (table_size * sizeof(uint64_t)) >> 20);
+    std::cout << "Allocated " << (table_size * sizeof(uint64_t)) << " byte (" << ((table_size * sizeof(uint64_t)) >> 20)
+            << "MB) memory." << std::endl;
 
 #if USE_RECURSIVE_SIEVE == 1
     if (limit > RECURSIVE_SIEVE_LIMIT)
