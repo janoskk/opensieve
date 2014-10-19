@@ -1,4 +1,4 @@
-CXXFLAGS += -g -W -Wall -Werror -m64 -march=core2 -O3 -pipe 
+CXXFLAGS += -g -W -Wall -Werror -m64 -march=core2 -O3 -pipe $(ADDFLAGS) 
 AS=$(CXX) -c $(CXXFLAGS)
 
 OBJS=opensieve.o arithmetic.o

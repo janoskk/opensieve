@@ -19,7 +19,9 @@
 # uint64_t asm_masking(uint64_t *ptr, unsigned length, unsigned table_offset);
 #                                %rdi          %rsi             %edx
 .align 4,0x90
+.globl asm_masking
 .globl _asm_masking
+asm_masking:
 _asm_masking:
 		# %r10 and %r12 are still free
 		pushq		%rbp

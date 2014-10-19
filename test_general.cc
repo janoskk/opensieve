@@ -62,7 +62,7 @@ static void write_prime(uint64_t prime)
 /************************************************************************************/
 static void hash_func_write(uint64_t prime)
 {
-    fprintf(global_file, "prime: %" PRIu64 " global_sum: %"PRIu64" global_cnt: %llu\n", prime, global_sum, global_cnt);
+    fprintf(global_file, "prime: %" PRIu64 " global_sum: %"PRIu64" global_cnt: %" PRIu64 "\n", prime, global_sum, global_cnt);
 
     global_sum += prime;
     global_cnt++;
