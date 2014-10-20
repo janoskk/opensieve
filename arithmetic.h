@@ -17,7 +17,6 @@
 #ifndef ARITHMETIC_H_
 #define ARITHMETIC_H_
 
-
 /************************************************************************************/
 /**
  * Shift the mask to right
@@ -48,12 +47,18 @@
 /**
  * Assembly function for the masking
  */
-extern "C" { uint64_t asm_masking(uint64_t *ptr, unsigned length, unsigned table_offset); }
+extern "C"
+{
+uint64_t asm_masking(uint64_t *ptr, unsigned length, unsigned table_offset);
+}
 
 /**
  * Assembly function for testing during the development
  */
-extern "C" { uint64_t testing(uint64_t *ptr, unsigned length); }
+extern "C"
+{
+uint64_t testing(uint64_t *ptr, unsigned length);
+}
 
 /************************************************************************************/
 /**
@@ -79,45 +84,6 @@ inline uint64_t jkk_asm_shr(uint64_t num, int bits)
             : "a" (num), "c" (bits)
     );
     return num;
-}
-
-/************************************************************************************/
-/**
- * Rotate to left instruction
- */
-inline uint64_t jkk_asm_rol(uint64_t num, int bits)
-{
-    __asm__("rolq %%cl, %%rax;"
-            : "=a" (num)
-            : "a" (num), "c" (bits)
-    );
-    return num;
-}
-
-/************************************************************************************/
-/**
- * Rotate to right instruction
- */
-inline uint64_t jkk_asm_ror(uint64_t num, int bits)
-{
-    __asm__("rorq %%cl, %%rax;"
-            : "=a" (num)
-            : "a" (num), "c" (bits)
-    );
-    return num;
-}
-
-/************************************************************************************/
-/**
- * Inline function for the BSF instruction
- */
-inline uint64_t jkk_asm_bsf(uint64_t num)
-{
-    uint64_t ret = 0;
-    asm("bsf %1, %0;"
-            :"=r" (ret) /* output */
-            :"r" (num) /* input */);
-    return ret;
 }
 
 #endif

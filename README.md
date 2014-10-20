@@ -4,20 +4,50 @@ opensieve
 What it does?
 -------------
 
-High-performance implementation of the sieve of Eratosthenes. It is optimized for the x86_64 architecture and tested only with gcc unser OS/X and Linux. Currently, the following is implemented:
+High-performance implementation of the sieve of Eratosthenes. It is optimized for the x86_64 architecture and tested only with gcc 4.9 and clang 3.4 under OS X and Linux. Currently, the following is implemented:
 - bit-based representation of the even numbers only
 - presieved with the first 7 (even) primes with masks
 - improved with the wheel sieve method modulo 30
 - speeded up with usage of segments 
 
+
+How to use?
+-----------
+
+Have a look on test_print.cc:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "opensieve.h"
+
+int main(int argc, char **argv)
+{
+    switch (argc)
+    {
+    case 2:
+        opensieve::sieve(0, atoll(argv[1]), PRINT_PRIME);
+        break;
+    case 3:
+        opensieve::sieve(atoll(argv[1]), atoll(argv[2]), PRINT_PRIME);
+        break;
+    default:
+        printf("Sieve out the given interval.\n"
+                "Usage: %s [start] end\n"
+                "  start:\tfirst number of the interval (default: 0)\n"
+                "  end:\tlast number of the interval\n", argv[0]);
+        break;
+    }
+    return 0;
+}
+
+
+How fast it is?
+---------------
 On a modern computer it sieves out up to 1'000'000'000 and iterates through the primes in less than 1 second (tested with i7-3615QM processor).
 
-What's next?
-------------
-
-Further performance improvements might be also applied. 
 
 To contribute?
 --------------
 
-Yes, please! Your help is always highly welcome!
+Yes, please! Your help is always highly welcome! Open tasks:
+- Support for Widows

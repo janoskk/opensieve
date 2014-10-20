@@ -23,9 +23,6 @@
 #include <math.h>
 #include <vector>
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include "arithmetic.h"
 #include "opensieve.h"
 
@@ -65,7 +62,7 @@ TEST c_masking_test()
     uint64_t arr[MASKING_TEST_LENGTH];
     for (uint64_t i = 0; i < 100000; i++)
     {
-        opensieve::c_masking(arr, MASKING_TEST_LENGTH, i * MASKING_TEST_LENGTH);
+        opensieve::internal::c_masking(arr, MASKING_TEST_LENGTH, i * MASKING_TEST_LENGTH);
     }
     PASS()
     ;

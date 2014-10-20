@@ -17,8 +17,13 @@
 #ifndef OPENSIEVE_H_
 #define OPENSIEVE_H_
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+
 namespace opensieve
 {
+#define PRINT_PRIME opensieve::print_prime
+
 /**
  * Process function that will be called for each prime after the interval is sieved.
  * Mainly for internal use.
@@ -28,8 +33,30 @@ namespace opensieve
 typedef void SIEVE_PROCESS_FUNC(uint64_t prime);
 
 /**
- * TODO: docu
- * Mainly for internal use.
+ * Standard process function that prints out the prime numbers.
+ *
+ * prime: current prime number
+ */
+void print_prime(uint64_t prime);
+
+/**
+ * Sieves out the [a*2^k..b*2^k] interval where a*2^k <= first_number < last_number <= b*2^k.
+ * The process function will be called for each prime between the first and last numbers.
+ *
+ * first_number: first number of the inner interval
+ * last_number: last number of the inner interval
+ * process_for_primes: process function
+ */
+void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *process_for_primes);
+
+namespace internal
+{
+/**
+ * Sieves out the table with the primes 3, 5, 7, 11, 13, 17 and 19 with masks.
+ *
+ * table: sieve table what is a bit table representing the odd numbers
+ * length: length of the table
+ * table_offset: current table's offset
  */
 void c_masking(uint64_t table[], unsigned length, unsigned table_offset);
 
@@ -38,14 +65,12 @@ void c_masking(uint64_t table[], unsigned length, unsigned table_offset);
  * 1) The caller has to free the allocated memory!
  * 2) The allocated size might be greater than the necessary size [0..2^s] limit <= 2^s
  *
- * Mainly for internal use.
- *
  * limit: upper bound of the sieved numbers
  * table: sieve table what is a bit table representing the odd numbers
  * table_size: size of the sieve table what is allocated by the function
  */
-void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size);
 
+void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size);
 /**
  * Going through the table and calling the process function for every prime number.
  *
@@ -54,33 +79,27 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size);
  * table_size: size of the sieve table
  * current_segment: for simple sieve it's always zero, but for segmented sieve it's
  *                  the current number of segment
+ * first_number: first number to be processed
+ * last_number: last number to be processed
+ *
  * returns with the last processed prime
  */
 uint64_t process_primes(SIEVE_PROCESS_FUNC *process_for_primes, uint64_t *table, uint64_t table_size,
-        unsigned current_segment = 0);
+        uint64_t current_segment = 0, uint64_t first_number = 0, uint64_t last_number = 0);
 
 /**
  * Sieves out no_of_segments segments starting with the first_segment. When the current segment has
  * sieved, the proces function will be called.
  *
- * Mainly for internal use.
- *
  * first_segment: start the sieve with that segment
  * no_of_segments: that many segments will be sieved
  * process_for_primes: process function
+ * first_number: first number to be processed
+ * last_number: last number to be processed
  */
 void sieve_segments(uint64_t first_segment, uint64_t no_of_segments, SIEVE_PROCESS_FUNC *process_for_primes,
-        uint64_t *table = 0);
-
-/**
- * Sieves out the [a*2^k..b*2^k] interval where a*2^k <= first_number < last_number <= b*2^k.
- *
- * first_number: first number of the inner interval
- * last_number: last number of the inner interval
- * process_for_primes: process function
- */
-void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *process_for_primes);
-
+        uint64_t *table = 0, uint64_t first_number = 0, uint64_t last_number = 0);
+}
 }
 
 #endif /* OPENSIEVE_H_ */

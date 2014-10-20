@@ -23,13 +23,8 @@
 #include <math.h>
 #include <vector>
 
-#define __STDC_FORMAT_MACROS
-#include <inttypes.h>
-
 #include "arithmetic.h"
 #include "opensieve.h"
-
-using namespace opensieve;
 
 #define TEST_FILE_TEMPLATE "test_results/test_%d_os.txt"
 
@@ -44,7 +39,7 @@ uint64_t global_cnt = 0;
 FILE *global_file = 0;
 
 /************************************************************************************/
-static void print_prime(uint64_t prime)
+static void print_prime_(uint64_t prime)
 {
 #if PERFORMANCE_TEST == 1
     prime++;
@@ -62,7 +57,8 @@ static void write_prime(uint64_t prime)
 /************************************************************************************/
 static void hash_func_write(uint64_t prime)
 {
-    fprintf(global_file, "prime: %" PRIu64 " global_sum: %"PRIu64" global_cnt: %" PRIu64 "\n", prime, global_sum, global_cnt);
+    fprintf(global_file, "prime: %" PRIu64 " global_sum: %"PRIu64" global_cnt: %" PRIu64 "\n", prime, global_sum,
+            global_cnt);
 
     global_sum += prime;
     global_cnt++;
@@ -76,43 +72,6 @@ static void hash_func(uint64_t prime)
 }
 
 /************************************************************************************/
-TEST assembly_test()
-{
-    uint64_t a_3 = 0x2492492492492492;
-    uint64_t a_5 = 0x4210842108421084;
-    uint64_t a_7 = 0x810204081020408;
-    uint64_t a_11 = 0x1002004008010020;
-    uint64_t a_13 = 0x400200100080040;
-    uint64_t a_17 = 0x800040002000100;
-    uint64_t a_19 = 0x800010000200;
-
-    uint64_t acc1 = 0;
-    uint64_t acc2 = 0;
-    uint64_t c = 0;
-
-    acc1 |= jkk_asm_ror(a_3, 1);
-    acc1 |= jkk_asm_rol(a_5, 1);
-    acc1 |= jkk_asm_ror(a_7, 1);
-    acc1 |= jkk_asm_rol(a_11, 2);
-    acc1 |= jkk_asm_rol(a_13, 1);
-    acc1 |= jkk_asm_rol(a_17, 4);
-    acc1 |= jkk_asm_ror(a_19, 7);
-
-    MASK_R(acc2, c, 3, a_3, 1);
-    MASK_L(acc2, c, 5, a_5, 1);
-    MASK_R(acc2, c, 7, a_7, 1);
-    MASK_L(acc2, c, 11, a_11, 2);
-    MASK_L(acc2, c, 13, a_13, 1);
-    MASK_L(acc2, c, 17, a_17, 4);
-    MASK_R(acc2, c, 19, a_19, 7);
-
-    ASSERT_EQ(acc1, acc2)
-    ;
-    PASS()
-    ;
-}
-
-/************************************************************************************/
 TEST masking_test()
 {
 #define MASKING_TEST_LENGTH_1 4096
@@ -122,7 +81,7 @@ TEST masking_test()
     for (unsigned j = 0; j < 10000; j++)
     {
         asm_masking(arr1, MASKING_TEST_LENGTH_1, j);
-        opensieve::c_masking(arr2, MASKING_TEST_LENGTH_1, j);
+        opensieve::internal::c_masking(arr2, MASKING_TEST_LENGTH_1, j);
 
         for (unsigned i = 0; i < MASKING_TEST_LENGTH_1; i++)
         {
@@ -167,44 +126,6 @@ void show_pattern(int prime)
 }
 
 /************************************************************************************/
-void old_sieve(uint64_t limit)
-{
-    uint64_t sqrt_limit = sqrt((double) limit) + 2;
-
-    // generate small primes <= sqrt < 2^32
-    char *small_primes = (char*) valloc((limit - 1) / 2 * sizeof(char));
-    if (small_primes == 0)
-    {
-        fprintf(stderr, "Unable to allocate small_primes!\n");
-        return;
-    }
-
-    memset(small_primes, 0xffffffff, ((limit - 1) / 2) * sizeof(char));
-    for (uint64_t i = 3; i <= sqrt_limit; i += 2)
-    {
-        if (small_primes[(i - 1) / 2])
-        {
-            for (int64_t j = i; i * j <= limit; j += 2)
-            {
-                small_primes[(i * j - 1) / 2] = 0;
-            }
-        }
-    }
-
-    // calculate the exact number of primes for allocation
-    uint64_t counter = 0;
-    for (uint64_t i = 1; i < (limit - 1) / 2; i++)
-    {
-        if (small_primes[i])
-        {
-            // printf("B %" PRIu64 "u\n", i*2+1);
-            counter++;
-        }
-    }
-    printf("primes: %" PRIu64 "u\n", counter);
-}
-
-/************************************************************************************/
 TEST simple_sieve_test()
 {
     uint64_t hash_results[][3] =
@@ -228,14 +149,14 @@ TEST simple_sieve_test()
         uint64_t *table = 0;
         uint64_t table_size;
 
-        sieve_small(hash_results[i][0], &table, table_size);
-        process_primes(hash_func_write, table, table_size, 0);
+        opensieve::internal::sieve_small(hash_results[i][0], &table, table_size);
+        opensieve::internal::process_primes(hash_func_write, table, table_size, 0 /* table */, 0 /* first_num */,
+                hash_results[i][0]  /* last_num */);
 
         free(table);
         fclose(global_file);
 
-        // printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n",
-        // global_sum, global_cnt);
+        //printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n", global_sum, global_cnt);
 
         ASSERT_EQ(global_sum, hash_results[i][1])
         ;
@@ -257,7 +178,7 @@ TEST file_sieve_test()
     ASSERTm("File cannot be open in file_sieve_test!", global_file != NULL)
     ;
 
-    sieve_segments(0, 100, write_prime);
+    opensieve::sieve(0, 10000000, write_prime);
 
     fclose(global_file);
     PASS()
@@ -267,7 +188,6 @@ TEST file_sieve_test()
 /************************************************************************************/
 SUITE(general_suite)
 {
-    RUN_TEST(assembly_test);
     RUN_TEST(masking_test);
 }
 
@@ -287,13 +207,13 @@ int devel_tests(void)
         global_cnt = 0;
         global_sum = 0;
 
-        sieve(0, a, hash_func);
+        opensieve::sieve(0, a, hash_func);
 
         printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n", global_sum, global_cnt);
     }
     else
     {
-        sieve_segments(0, 3000, print_prime);
+        opensieve::sieve(0, 10000000, print_prime_);
     }
     return 0;
 }
