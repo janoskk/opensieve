@@ -9,4 +9,5 @@
 .cproject
 test_general
 test_perf
+test_print
 .depend
