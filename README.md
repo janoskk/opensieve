@@ -5,6 +5,7 @@ What it does?
 -------------
 
 High-performance implementation of the sieve of Eratosthenes. It is optimized for the x86_64 architecture and tested only with gcc 4.9 and clang 3.4 under OS X and Linux. Currently, the following is implemented:
+
 - bit-based representation of the even numbers only
 - presieved with the first 7 (even) primes with masks
 - improved with the wheel sieve method modulo 30
@@ -14,8 +15,8 @@ High-performance implementation of the sieve of Eratosthenes. It is optimized fo
 How to use?
 -----------
 
-Have a look on test_print.cc:
-
+Have a look on the following code to print out the primes in the given period. This code can be also found in test_print.cc.
+```c++
 #include <stdio.h>
 #include <stdlib.h>
 #include "opensieve.h"
@@ -39,7 +40,12 @@ int main(int argc, char **argv)
     }
     return 0;
 }
-
+```
+To get it run, type the following commands after you cloned the repository:
+```bash
+$ make
+$ ./test_print 1 100
+```
 
 How fast it is?
 ---------------
@@ -50,4 +56,5 @@ To contribute?
 --------------
 
 Yes, please! Your help is always highly welcome! Open tasks:
+
 - Support for Widows
