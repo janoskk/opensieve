@@ -151,7 +151,7 @@ TEST simple_sieve_test()
 
         opensieve::internal::sieve_small(hash_results[i][0], &table, table_size);
         opensieve::internal::process_primes(hash_func_write, table, table_size, 0 /* table */, 0 /* first_num */,
-                hash_results[i][0]  /* last_num */);
+                hash_results[i][0] /* last_num */);
 
         free(table);
         fclose(global_file);
@@ -161,6 +161,44 @@ TEST simple_sieve_test()
         ASSERT_EQ(global_sum, hash_results[i][1])
         ;
         ASSERT_EQ(global_cnt, hash_results[i][2])
+        ;
+    }
+
+    PASS()
+    ;
+    return 0;
+}
+
+/************************************************************************************/
+TEST complex_sieve_test()
+{
+    uint64_t hash_results[][4] =
+    {
+    { 1, 127, 1720, 31 },
+    { 1, 15485864, 7472966967499, 1000000 },
+    { 123456789, 987654321, 23726506105551414ULL, 43224192ULL },
+    { 10101, 101010101, 284713236839279ULL, 5814973ULL },
+    { 1ULL << 20, 1ULL << 21, 115430379568ULL, 73586ULL },
+    { (1ULL << 24) + 1, (1ULL << 25), 24754017328490ULL, 985818ULL },
+    { (1ULL << 24) - 1, (1ULL << 25), 24754017328490ULL, 985818ULL },
+    { (1ULL << 24) + 1, (1ULL << 25) + 1, 24754017328490ULL, 985818ULL },
+    { (1ULL << 24) - 1, (1ULL << 25) + 1, 24754017328490ULL, 985818ULL },
+    { (1ULL << 24) + 1, (1ULL << 25) - 1, 24754017328490ULL, 985818ULL },
+    { (1ULL << 24) - 1, (1ULL << 25) - 1, 24754017328490ULL, 985818ULL },
+    { 0, 0, 0 } };
+
+    for (int i = 0; hash_results[i][0] != 0; i++)
+    {
+        global_sum = 0;
+        global_cnt = 0;
+
+        opensieve::sieve(hash_results[i][0], hash_results[i][1], hash_func);
+
+        //printf("global_sum = %" PRIu64 "ULL global_cnt = %" PRIu64 "ULL\n", global_sum, global_cnt);
+
+        ASSERT_EQ(global_sum, hash_results[i][2])
+        ;
+        ASSERT_EQ(global_cnt, hash_results[i][3])
         ;
     }
 
@@ -186,20 +224,7 @@ TEST file_sieve_test()
 }
 
 /************************************************************************************/
-SUITE(general_suite)
-{
-    RUN_TEST(masking_test);
-}
-
-/************************************************************************************/
-SUITE(sieve_suite)
-{
-    RUN_TEST(simple_sieve_test);
-    RUN_TEST(file_sieve_test);
-}
-
-/************************************************************************************/
-int devel_tests(void)
+TEST devel_tests_case()
 {
     if (PERFORMANCE_TEST)
     {
@@ -209,26 +234,28 @@ int devel_tests(void)
 
         opensieve::sieve(0, a, hash_func);
 
-        printf("global_sum = %" PRIu64 "u global_cnt = %" PRIu64 "u\n", global_sum, global_cnt);
+        //printf("global_sum = %" PRIu64 "ULL global_cnt = %" PRIu64 "ULL\n", global_sum, global_cnt);
     }
     else
     {
         opensieve::sieve(0, 10000000, print_prime_);
     }
-    return 0;
-}
-
-/************************************************************************************/
-TEST devel_tests_case()
-{
-    devel_tests();
     PASS()
     ;
 }
 
 /************************************************************************************/
-SUITE(devel_tests_suite)
+SUITE(general_suite)
 {
+    RUN_TEST(masking_test);
+}
+
+/************************************************************************************/
+SUITE(sieve_suite)
+{
+    RUN_TEST(simple_sieve_test);
+    RUN_TEST(complex_sieve_test);
+    RUN_TEST(file_sieve_test);
     RUN_TEST(devel_tests_case);
 }
 
@@ -243,7 +270,6 @@ int main(int argc, char **argv)
     ; /* command-line arguments, initialization. */
     RUN_SUITE(general_suite);
     RUN_SUITE(sieve_suite);
-    RUN_SUITE(devel_tests_suite);
     GREATEST_MAIN_END(); /* display results */
 }
 

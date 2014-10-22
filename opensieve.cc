@@ -24,7 +24,7 @@
 #include "opensieve.h"
 
 #ifndef SEGMENT_BITS
-#define SEGMENT_BITS 20
+#define SEGMENT_BITS 21
 #endif
 
 #ifndef SEGMENT_SIZE
@@ -146,13 +146,13 @@ void sieve_small(uint64_t limit, uint64_t **table, uint64_t& table_size)
     {
         throw new std::runtime_error("Unable to allocate memory!");
     }
-    printf("Allocated %" PRIu64 " byte (%" PRIu64 "MB) memory.\n", (table_size * sizeof(uint64_t)),
-            (table_size * sizeof(uint64_t)) >> 20);
+    //  printf("Allocated %" PRIu64 " byte (%" PRIu64 "MB) memory.\n", (table_size * sizeof(uint64_t)),
+    //         (table_size * sizeof(uint64_t)) >> 20);
 
 #if USE_RECURSIVE_SIEVE == 1
     if (limit > RECURSIVE_SIEVE_LIMIT)
     {
-        printf("small sieve table is still too large\n");
+        // printf("small sieve table is still too large\n");
         sieve_segments(0, no_of_segments, 0, *table);
         return;
     }
@@ -466,6 +466,11 @@ void sieve(uint64_t first_number, uint64_t last_number, SIEVE_PROCESS_FUNC *proc
 
     uint64_t first_segment = first_number / SEGMENT_SIZE;
     uint64_t no_of_segments = last_number / SEGMENT_SIZE - first_segment + 1;
+
+    if (process_for_primes == print_prime)
+    {
+        setvbuf(stdout, (char *) NULL, _IOLBF, 0);
+    }
 
     sieve_segments(first_segment, no_of_segments, process_for_primes, 0 /* table */, first_number, last_number);
 }

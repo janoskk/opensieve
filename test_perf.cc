@@ -43,6 +43,20 @@ SUITE(up_to_1_billion)
 }
 
 /************************************************************************************/
+TEST up_to_3x2_23_billion_test()
+{
+    opensieve::sieve(0, 3145728000ULL, 0);
+    PASS()
+    ;
+}
+
+/************************************************************************************/
+SUITE(up_to_3x2_23_billion)
+{
+    RUN_TEST(up_to_3x2_23_billion_test);
+}
+
+/************************************************************************************/
 TEST up_to_10_billion_test()
 {
     opensieve::sieve(0, 10000000000, 0);
@@ -102,6 +116,7 @@ int main(int argc, char **argv)
     GREATEST_MAIN_BEGIN()
     ; /* command-line arguments, initialization. */
     RUN_SUITE(up_to_1_billion);
+    RUN_SUITE(up_to_3x2_23_billion);
     RUN_SUITE(up_to_10_billion);
     RUN_SUITE(c_masking);
     RUN_SUITE(asm_masking);
